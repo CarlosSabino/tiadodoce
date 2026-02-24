@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Painel da Tia - Gestão de Vendas</title>
     <style>
-        :root { --doce-rosa: #ff85a1; --doce-azul: #a2d2ff; --doce-verde: #25d366; --doce-cancel: #ff7675; }
+        :root { --doce-rosa: #ff85a1; --doce-azul: #a2d2ff; --doce-verde: #25d366; --doce-laranja: #e67e22; --doce-cancel: #ff7675; }
         body { font-family: 'Segoe UI', sans-serif; background: url('fundo.png') fixed center; background-size: cover; margin: 0; padding: 20px; }
         .admin-card { background: rgba(255, 255, 255, 0.96); backdrop-filter: blur(10px); max-width: 650px; margin: auto; padding: 25px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); border: 2px solid white; }
         h1, h3 { color: #d63384; text-align: center; }
@@ -17,7 +17,7 @@
         .controles { display: flex; align-items: center; gap: 8px; }
         .btn-mini { padding: 8px 12px; border-radius: 8px; border: none; cursor: pointer; font-size: 0.8em; font-weight: bold; }
         .financeiro-box { background: #e3f2fd; padding: 15px; border-radius: 12px; margin: 20px 0; display: flex; justify-content: space-around; font-weight: bold; color: #1976d2; border: 1px solid var(--doce-azul); }
-        .pedido-card { background: white; border: 1px solid #eee; padding: 15px; border-radius: 12px; margin-bottom: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); transition: 0.3s; }
+        .pedido-card { background: white; border: 1px solid #eee; padding: 15px; border-radius: 12px; margin-bottom: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
         .status-badge { font-size: 0.75em; padding: 3px 8px; border-radius: 5px; margin-left: 5px; font-weight: bold; text-transform: uppercase; }
     </style>
 </head>
@@ -25,7 +25,6 @@
 
 <div class="admin-card" id="area-admin" style="display:none;">
     <h1>Painel de Gestão 🛠️</h1>
-    
     <div class="form-group">
         <h3>Cadastrar Novo Doce</h3>
         <input type="text" id="novo-nome" placeholder="Nome do Doce">
@@ -33,11 +32,9 @@
         <input type="number" id="novo-estoque" placeholder="Qtd Inicial">
         <button class="btn btn-add" id="btnSalvarProduto">Adicionar ao Cardápio</button>
     </div>
-
     <hr>
     <h3>📦 Estoque Atual</h3>
     <div id="lista-estoque">Buscando estoque...</div>
-
     <hr>
     <h3>💰 Fechamento de Quinzena</h3>
     <div class="financeiro-box">
@@ -45,7 +42,6 @@
         <div>Total a Receber: R$ <span id="val-p">0,00</span></div>
     </div>
     <div id="lista-pedidos">Buscando pedidos...</div>
-
     <button onclick="location.href='index.html'" style="width:100%; margin-top:20px; background:#ddd; border:none; padding:12px; border-radius:10px; cursor:pointer; font-weight:bold;">Sair do Painel</button>
 </div>
 
@@ -78,7 +74,6 @@
     });
 
     function iniciarEscutas() {
-        // Monitor de Estoque
         onSnapshot(collection(db, "produtos"), (snap) => {
             const cont = document.getElementById('lista-estoque');
             cont.innerHTML = "";
@@ -96,30 +91,22 @@
             });
         });
 
-        // Monitor de Pedidos e Controle de Quinzena
         onSnapshot(collection(db, "pedidos"), (snap) => {
             const cont = document.getElementById('lista-pedidos');
             let qAbertos = 0, vTotal = 0;
             cont.innerHTML = "";
-            
             const docs = [];
             snap.forEach(d => docs.push({ id: d.id, ...d.data() }));
             docs.sort((a, b) => new Date(b.data) - new Date(a.data));
 
             docs.forEach(ped => {
-                // Cálculo financeiro: Só soma o que não foi pago e não foi cancelado
-                if(ped.status !== "Pago" && ped.status !== "Cancelado") { 
-                    qAbertos++; 
-                    vTotal += ped.total; 
-                }
-                
+                if(ped.status !== "Pago" && ped.status !== "Cancelado") { qAbertos++; vTotal += ped.total; }
                 let listaItens = "";
-                if(ped.itens) {
-                    Object.keys(ped.itens).forEach(n => listaItens += `<small>• ${ped.itens[n].qtd}x ${n}</small><br>`);
-                }
+                if(ped.itens) Object.keys(ped.itens).forEach(n => listaItens += `<small>• ${ped.itens[n].qtd}x ${n}</small><br>`);
 
                 const foiPago = ped.status === "Pago";
                 const foiEntregue = ped.entregue || false;
+                const statusFinanceiro = foiPago ? '<span style="color:var(--doce-verde)">[PAGO]</span>' : '<span style="color:var(--doce-laranja)">[PENDENTE PAGAMENTO]</span>';
 
                 cont.innerHTML += `
                 <div class="pedido-card" style="border-left: 6px solid ${foiPago ? 'var(--doce-verde)' : 'var(--doce-rosa)'}">
@@ -127,23 +114,17 @@
                         <b>${ped.cliente}</b>
                         <span>
                             ${foiEntregue ? '<span class="status-badge" style="background:var(--doce-azul); color:white;">Entregue</span>' : ''}
-                            ${ped.status === "Cancelado" ? '<span class="status-badge" style="background:var(--doce-cancel); color:white;">Cancelado</span>' : ''}
+                            ${statusFinanceiro}
                         </span>
                     </div>
                     <div style="margin: 10px 0; color: #444;">${listaItens}</div>
                     <div style="font-size: 0.85em; color: #666;">
                         💰 R$ ${ped.total.toFixed(2)} | 💳 ${ped.pagamento} | 📅 ${new Date(ped.data).toLocaleDateString()}
                     </div>
-                    
                     <div style="margin-top: 12px; display: flex; gap: 8px; flex-wrap: wrap;">
-                        ${!foiPago && ped.status !== "Cancelado" ? 
-                            `<button class="btn-mini" style="background:var(--doce-verde); color:white;" onclick="baixarPedido('${ped.id}')">Confirmar Pagamento</button>` : ''}
-                        
-                        ${!foiEntregue && ped.status !== "Cancelado" ? 
-                            `<button class="btn-mini" style="background:var(--doce-azul); color:white;" onclick="entregarPedido('${ped.id}')">Confirmar Entrega</button>` : ''}
-                        
-                        ${ped.status === "Pendente" && !foiEntregue ? 
-                            `<button class="btn-mini" style="background:var(--doce-cancel); color:white;" onclick="cancelarPedido('${ped.id}')">Cancelar</button>` : ''}
+                        ${!foiPago && ped.status !== "Cancelado" ? `<button class="btn-mini" style="background:var(--doce-verde); color:white;" onclick="baixarPedido('${ped.id}')">Dar Baixa $</button>` : ''}
+                        ${!foiEntregue && ped.status !== "Cancelado" ? `<button class="btn-mini" style="background:var(--doce-azul); color:white;" onclick="entregarPedido('${ped.id}')">Marcar Entregue</button>` : ''}
+                        ${ped.status === "Pendente" && !foiEntregue ? `<button class="btn-mini" style="background:var(--doce-cancel); color:white;" onclick="cancelarPedido('${ped.id}')">Cancelar</button>` : ''}
                     </div>
                 </div>`;
             });
@@ -152,44 +133,18 @@
         });
     }
 
-    // AÇÕES GLOBAIS
+    window.ajustarEstoque = async (id, valor) => { if(valor >= 0) await updateDoc(doc(db, "produtos", id), { estoque: valor }); };
+    window.removerDoce = async (id) => { if(confirm("Remover?")) await deleteDoc(doc(db, "produtos", id)); };
+    window.baixarPedido = async (id) => { if(confirm("Confirmar Pagamento?")) await updateDoc(doc(db, "pedidos", id), { status: "Pago" }); };
+    window.entregarPedido = async (id) => { if(confirm("Marcar como Entregue?")) await updateDoc(doc(db, "pedidos", id), { entregue: true }); };
+    window.cancelarPedido = async (id) => { if(confirm("Cancelar?")) await updateDoc(doc(db, "pedidos", id), { status: "Cancelado" }); };
     document.getElementById('btnSalvarProduto').onclick = async () => {
-        const nome = document.getElementById('novo-nome').value;
-        const preco = parseFloat(document.getElementById('novo-preco').value);
-        const estoque = parseInt(document.getElementById('novo-estoque').value);
-        if(!nome || isNaN(preco)) return alert("Preencha o nome e preço!");
-        await addDoc(collection(db, "produtos"), { nome, preco, estoque: estoque || 0 });
-        alert("Doce cadastrado!");
+        const n = document.getElementById('novo-nome').value, p = parseFloat(document.getElementById('novo-preco').value), e = parseInt(document.getElementById('novo-estoque').value);
+        if(!n || isNaN(p)) return alert("Erro!");
+        await addDoc(collection(db, "produtos"), { nome: n, preco: p, estoque: e || 0 });
+        alert("Cadastrado!");
         document.getElementById('novo-nome').value = ""; document.getElementById('novo-preco').value = ""; document.getElementById('novo-estoque').value = "";
     };
-
-    window.ajustarEstoque = async (id, valor) => {
-        if(valor < 0) return;
-        await updateDoc(doc(db, "produtos", id), { estoque: valor });
-    };
-
-    window.removerDoce = async (id) => {
-        if(confirm("Remover este doce?")) await deleteDoc(doc(db, "produtos", id));
-    };
-
-    window.baixarPedido = async (id) => {
-        if(confirm("Marcar pedido como PAGO?")) {
-            await updateDoc(doc(db, "pedidos", id), { status: "Pago" });
-        }
-    };
-
-    window.entregarPedido = async (id) => {
-        if(confirm("Confirmar que o cliente já recebeu o doce?")) {
-            await updateDoc(doc(db, "pedidos", id), { entregue: true });
-        }
-    };
-
-    window.cancelarPedido = async (id) => {
-        if(confirm("Cancelar este pedido?")) {
-            await updateDoc(doc(db, "pedidos", id), { status: "Cancelado" });
-        }
-    };
-
 </script>
 </body>
 </html>
