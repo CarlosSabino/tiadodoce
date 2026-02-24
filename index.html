@@ -9,8 +9,8 @@
         body { margin: 0; font-family: 'Comic Sans MS', cursive, sans-serif; background: url('fundo.png') fixed center; background-size: cover; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
         .glass-card { background: rgba(255, 255, 255, 0.96); backdrop-filter: blur(10px); border-radius: 25px; padding: 25px; width: 90%; max-width: 450px; box-shadow: 0 10px 40px rgba(0,0,0,0.2); border: 2px solid white; margin: 20px auto; }
         h1 { color: #d63384; text-align: center; }
-        input { width: 100%; padding: 12px; margin: 8px 0; border-radius: 12px; border: 1.5px solid #ffc1d1; outline: none; box-sizing: border-box; }
-        .btn { width: 100%; padding: 14px; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; margin-top: 10px; }
+        input, select { width: 100%; padding: 12px; margin: 8px 0; border-radius: 12px; border: 1.5px solid #ffc1d1; outline: none; box-sizing: border-box; font-family: inherit; }
+        .btn { width: 100%; padding: 14px; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; margin-top: 10px; transition: 0.3s; }
         .btn-principal { background: var(--doce-rosa); color: white; box-shadow: 0 4px 0 #d63384; }
         .btn-whatsapp { background: #25d366; color: white; font-size: 1.1em; margin-top: 20px; }
         .produto { display: flex; justify-content: space-between; align-items: center; padding: 12px; border-bottom: 1px dashed var(--doce-rosa); }
@@ -20,58 +20,55 @@
 </head>
 <body>
 
-   <div id="sessao-auth" class="glass-card">
-    <h1>Tia do Doce 🧁</h1>
-    
-    <div style="display: flex; justify-content: space-around; margin-bottom: 20px; border-bottom: 2px solid #ffdeeb;">
-        <button id="tab-login" onclick="mudarAba('login')" style="flex:1; padding: 10px; border:none; background:none; cursor:pointer; font-weight:bold; color:#d63384; border-bottom: 2px solid #d63384;">Entrar</button>
-        <button id="tab-cadastro" onclick="mudarAba('cadastro')" style="flex:1; padding: 10px; border:none; background:none; cursor:pointer; color:#aaa;">Cadastrar</button>
-    </div>
+    <div id="sessao-auth" class="glass-card">
+        <h1>Tia do Doce 🧁</h1>
+        
+        <div style="display: flex; justify-content: space-around; margin-bottom: 20px; border-bottom: 2px solid #ffdeeb;">
+            <button id="tab-login" onclick="mudarAba('login')" style="flex:1; padding: 10px; border:none; background:none; cursor:pointer; font-weight:bold; color:#d63384; border-bottom: 2px solid #d63384;">Entrar</button>
+            <button id="tab-cadastro" onclick="mudarAba('cadastro')" style="flex:1; padding: 10px; border:none; background:none; cursor:pointer; color:#aaa;">Cadastrar</button>
+        </div>
 
-    <div id="form-login">
-        <input type="email" id="loginEmail" placeholder="Seu e-mail">
-        <input type="password" id="loginSenha" placeholder="Sua senha">
-        <button class="btn btn-principal" onclick="btnLogin()">Entrar no Cardápio</button>
-    </div>
+        <div id="form-login">
+            <input type="email" id="loginEmail" placeholder="Seu e-mail">
+            <input type="password" id="loginSenha" placeholder="Sua senha">
+            <button class="btn btn-principal" onclick="btnLogin()">Entrar no Cardápio</button>
+        </div>
 
-    <div id="form-cadastro" style="display:none;">
-        <input type="text" id="regNome" placeholder="Seu Apelido (Ex: Carlão)">
-        <input type="email" id="regEmail" placeholder="Seu melhor e-mail">
-        <input type="password" id="regSenha" placeholder="Crie uma senha">
-        <button class="btn btn-principal" onclick="btnCadastrar()">Criar Minha Conta</button>
+        <div id="form-cadastro" style="display:none;">
+            <input type="text" id="regNome" placeholder="Seu Apelido (Ex: Carlão)">
+            <input type="email" id="regEmail" placeholder="Seu melhor e-mail">
+            <input type="password" id="regSenha" placeholder="Crie uma senha">
+            <button class="btn btn-principal" onclick="btnCadastrar()">Criar Minha Conta</button>
+        </div>
     </div>
-</div>
-
-    <div id="form-login">
-        <input type="email" id="loginEmail" placeholder="Seu e-mail">
-        <input type="password" id="loginSenha" placeholder="Sua senha">
-        <button class="btn btn-principal" onclick="btnLogin()">Entrar no Cardápio</button>
-    </div>
-
-    <div id="form-cadastro" style="display:none;">
-        <p style="font-size: 0.8em; color: #666; text-align: center;">Crie sua conta para pedir!</p>
-        <input type="text" id="regNome" placeholder="Como quer ser chamado? (Apelido)">
-        <input type="email" id="regEmail" placeholder="Seu melhor e-mail">
-        <input type="password" id="regSenha" placeholder="Crie uma senha">
-        <button class="btn btn-principal" onclick="btnCadastrar()">Criar Minha Conta</button>
-    </div>
-</div>
 
     <div id="sessao-cardapio" class="glass-card" style="display:none;">
         <h1 id="boas-vindas">Cardápio ✨</h1>
         <div id="lista-produtos">Carregando...</div>
+        
         <div style="margin-top:25px; background: #fff; padding: 15px; border-radius: 15px;">
             <h3>🛒 Seu Carrinho</h3>
             <div id="carrinho-itens"></div>
             <p><strong>Total: R$ <span id="total-valor">0,00</span></strong></p>
+            
+            <select id="forma-pagamento">
+                <option value="" disabled selected>Como você vai pagar?</option>
+                <option value="Pix">Pix (Na hora)</option>
+                <option value="Dinheiro">Dinheiro (Na hora)</option>
+                <option value="Quinzena">Pagar na Quinzena (Pendura)</option>
+            </select>
+
             <button class="btn btn-whatsapp" onclick="enviarPedido()">Finalizar no WhatsApp 🚀</button>
-            <div style="margin-top:20px; border-top: 1px solid #eee; pt: 10px;">
-            <button id="btn-admin-link" class="btn" style="display:none; background:#2d3436; color:white; margin-bottom:10px;" onclick="location.href='painel.html'">
-                ⚙️ Painel Administrativo
-            </button>
-            <button class="btn" onclick="logout()" style="background:none; color:#aaa; font-size:0.8em; text-decoration:underline; width:100%;">
-                Sair da conta
-            </button>
+            
+            <div style="margin-top:20px; border-top: 1px solid #eee; padding-top: 10px;">
+                <button id="btn-admin-link" class="btn" style="display:none; background:#2d3436; color:white; margin-bottom:10px;" onclick="location.href='painel.html'">
+                    ⚙️ Painel Administrativo
+                </button>
+                <button class="btn" onclick="logout()" style="background:none; color:#aaa; font-size:0.8em; text-decoration:underline; width:100%;">
+                    Sair da conta
+                </button>
+            </div>
+        </div>
     </div>
 
 <script type="module">
@@ -91,51 +88,51 @@
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const db = getFirestore(app);
+    const EMAIL_ADMIN = "carlos.sabino@outlook.com.br";
 
+    // --- FUNÇÕES DE AUTH ---
     window.btnLogin = () => {
-        signInWithEmailAndPassword(auth, document.getElementById('regEmail').value, document.getElementById('regSenha').value).catch(e => alert(e.message));
+        const email = document.getElementById('loginEmail').value;
+        const senha = document.getElementById('loginSenha').value;
+        if (!email || !senha) return alert("Preencha e-mail e senha!");
+        signInWithEmailAndPassword(auth, email, senha).catch(e => alert("Erro ao entrar: " + e.message));
     };
 
     window.btnCadastrar = () => {
         const nome = document.getElementById('regNome').value;
-        if(!nome) return alert("Diga seu apelido!");
-        createUserWithEmailAndPassword(auth, document.getElementById('regEmail').value, document.getElementById('regSenha').value)
+        const email = document.getElementById('regEmail').value;
+        const senha = document.getElementById('regSenha').value;
+        if(!nome || !email || !senha) return alert("Preencha todos os campos!");
+        createUserWithEmailAndPassword(auth, email, senha)
             .then((res) => updateProfile(res.user, { displayName: nome }))
             .catch(e => alert(e.message));
     };
 
     window.logout = () => signOut(auth);
 
-    const EMAIL_ADMIN = "carlos.sabino@outlook.com.br"; // Seu e-mail de admin
+    onAuthStateChanged(auth, (user) => {
+        const sessaoAuth = document.getElementById('sessao-auth');
+        const sessaoCardapio = document.getElementById('sessao-cardapio');
+        const btnAdmin = document.getElementById('btn-admin-link');
+        const boasVindas = document.getElementById('boas-vindas');
 
-onAuthStateChanged(auth, (user) => {
-    const sessaoAuth = document.getElementById('sessao-auth');
-    const sessaoCardapio = document.getElementById('sessao-cardapio');
-    const btnAdmin = document.getElementById('btn-admin-link');
-    const boasVindas = document.getElementById('boas-vindas');
+        if (user) {
+            sessaoAuth.style.display = 'none';
+            sessaoCardapio.style.display = 'block';
 
-    if (user) {
-        sessaoAuth.style.display = 'none';
-        sessaoCardapio.style.display = 'block';
-
-        // --- CORREÇÃO DA SAUDAÇÃO ---
-        if (user.email === EMAIL_ADMIN) {
-            boasVindas.innerText = "Oi, Tia! 🧁";
-            btnAdmin.style.display = 'block'; // Mostra o botão do painel
+            if (user.email === EMAIL_ADMIN) {
+                boasVindas.innerText = "Oi, Tia! 🧁";
+                btnAdmin.style.display = 'block';
+            } else {
+                boasVindas.innerText = "Oi, " + (user.displayName || "Cliente") + "! ✨";
+                btnAdmin.style.display = 'none';
+            }
+            carregarProdutos();
         } else {
-            // Se o displayName for null, usa "Cliente" por segurança
-            const nomeExibicao = user.displayName || "Cliente";
-            boasVindas.innerText = "Oi, " + nomeExibicao + "! ✨";
-            btnAdmin.style.display = 'none';
+            sessaoAuth.style.display = 'block';
+            sessaoCardapio.style.display = 'none';
         }
-
-        carregarProdutos();
-    } else {
-        sessaoAuth.style.display = 'block';
-        sessaoCardapio.style.display = 'none';
-        btnAdmin.style.display = 'none';
-    }
-});
+    });
 
     async function carregarProdutos() {
         const snap = await getDocs(collection(db, "produtos"));
@@ -143,12 +140,14 @@ onAuthStateChanged(auth, (user) => {
         lista.innerHTML = "";
         snap.forEach(doc => {
             const p = doc.data();
-            lista.innerHTML += `<div class="produto"><div><strong>${p.nome}</strong><br>R$ ${p.preco.toFixed(2)}</div>
-            <button class="btn-add" onclick="adicionar('${p.nome}', ${p.preco})" ${p.estoque <= 0 ? 'disabled' : ''}>+</button></div>`;
+            lista.innerHTML += `<div class="produto">
+                <div><strong>${p.nome}</strong><br>R$ ${p.preco.toFixed(2)}</div>
+                <button class="btn-add" onclick="adicionar('${p.nome}', ${p.preco})" ${p.estoque <= 0 ? 'disabled' : ''}>+</button>
+            </div>`;
         });
     }
 
-    // Tornar db e collection acessíveis para o outro script
+    // Exportando para o escopo global
     window.db = db;
     window.addDoc = addDoc;
     window.collection = collection;
@@ -159,26 +158,25 @@ onAuthStateChanged(auth, (user) => {
     let carrinho = {}; 
     let total = 0;
 
-    function adicionar(nome, preco) {
-        if(carrinho[nome]) { 
-            carrinho[nome].qtd++; 
-        } else { 
-            carrinho[nome] = { preco, qtd: 1 }; 
-        }
-        total += preco; 
-        renderizar();
+    window.mudarAba = (tipo) => {
+        const isLogin = tipo === 'login';
+        document.getElementById('form-login').style.display = isLogin ? 'block' : 'none';
+        document.getElementById('form-cadastro').style.display = isLogin ? 'none' : 'block';
+        document.getElementById('tab-login').style.color = isLogin ? '#d63384' : '#aaa';
+        document.getElementById('tab-login').style.borderBottom = isLogin ? '2px solid #d63384' : 'none';
+        document.getElementById('tab-cadastro').style.color = isLogin ? '#aaa' : '#d63384';
+        document.getElementById('tab-cadastro').style.borderBottom = isLogin ? 'none' : '2px solid #d63384';
+    };
+
+    window.adicionar = (nome, preco) => {
+        if(carrinho[nome]) { carrinho[nome].qtd++; } else { carrinho[nome] = { preco, qtd: 1 }; }
+        total += preco; renderizar();
     }
 
-    // --- NOVA FUNÇÃO PARA REMOVER ITEM ---
-    function remover(nome) {
+    window.remover = (nome) => {
         if (carrinho[nome]) {
-            total -= carrinho[nome].preco; // Subtrai um do total
-            
-            if (carrinho[nome].qtd > 1) {
-                carrinho[nome].qtd--; // Diminui a quantidade
-            } else {
-                delete carrinho[nome]; // Remove do objeto se for o último
-            }
+            total -= carrinho[nome].preco;
+            if (carrinho[nome].qtd > 1) { carrinho[nome].qtd--; } else { delete carrinho[nome]; }
             renderizar();
         }
     }
@@ -186,102 +184,43 @@ onAuthStateChanged(auth, (user) => {
     function renderizar() {
         const c = document.getElementById('carrinho-itens');
         const keys = Object.keys(carrinho);
-
         if (keys.length === 0) {
             c.innerHTML = '<p style="color: #ccc; font-style: italic;">Carrinho vazio...</p>';
         } else {
             c.innerHTML = keys.map(n => `
                 <div class="item-carrinho" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
                     <span>${carrinho[n].qtd}x ${n}</span>
-                    <button onclick="remover('${n}')" style="background: #ff7675; color: white; border: none; border-radius: 5px; padding: 2px 8px; cursor: pointer; font-size: 0.8em;">X</button>
+                    <button onclick="remover('${n}')" style="background: #ff7675; color: white; border: none; border-radius: 5px; padding: 2px 8px; cursor: pointer;">X</button>
                 </div>
             `).join('');
         }
         document.getElementById('total-valor').innerText = total.toFixed(2);
     }
 
-    async function enviarPedido() {
-    if(total <= 0) return alert("Adicione algo ao carrinho primeiro!");
-    
-    // Gera um código curto de 4 caracteres (Ex: A1B2)
-    const pedidoId = Math.random().toString(36).substring(2, 6).toUpperCase();
-    const user = window.auth.currentUser;
-    const apelido = user ? user.displayName : "Cliente";
+    window.enviarPedido = async () => {
+        const formaPgto = document.getElementById('forma-pagamento').value;
+        if(!formaPgto) return alert("Escolha a forma de pagamento!");
+        if(total <= 0) return alert("Carrinho vazio!");
 
-    // 1. SALVAR NO FIRESTORE (Financeiro da Tia)
-    try {
-        await window.addDoc(window.collection(window.db, "pedidos"), {
-            pedidoId, 
-            cliente: apelido, 
-            total, 
-            status: "Pendente", 
-            data: new Date().toISOString()
-        });
-    } catch (e) { console.error("Erro no banco:", e); }
+        const pedidoId = Math.random().toString(36).substring(2, 6).toUpperCase();
+        const user = window.auth.currentUser;
+        const apelido = user ? user.displayName : "Cliente";
 
-    // 2. MENSAGEM TURBINADA DO WHATSAPP
-    let msg = `*NOVO PEDIDO DA TIA* 🧁✨\n`;
-    msg += `--------------------------------\n`;
-    msg += `🆔 *CÓDIGO:* #${pedidoId}\n`;
-    msg += `👤 *CLIENTE:* ${apelido}\n`;
-    msg += `--------------------------------\n\n`;
-    msg += `*ITENS DO PEDIDO:* \n`;
-    
-    Object.keys(carrinho).forEach(n => {
-        msg += `🔹 *${carrinho[n].qtd}x* ${n}\n`;
-    });
-    
-    msg += `\n--------------------------------\n`;
-    msg += `💰 *TOTAL A PAGAR:* R$ ${total.toFixed(2)}\n`;
-    msg += `--------------------------------\n`;
-    msg += `_Obrigada pela preferência!_ 😍`;
-    
-    const tel = "5511973019207"; // <-- Número da Tia
-    window.open(`https://wa.me/${tel}?text=${encodeURIComponent(msg)}`);
-    
-    // Limpa carrinho
-    carrinho = {}; total = 0; renderizar();
+        try {
+            await window.addDoc(window.collection(window.db, "pedidos"), {
+                pedidoId, cliente: apelido, total, status: "Pendente", pagamento: formaPgto, data: new Date().toISOString()
+            });
+
+            let msg = `*NOVO PEDIDO DA TIA* 🧁✨\n--------------------------------\n`;
+            msg += `🆔 *CÓDIGO:* #${pedidoId}\n👤 *CLIENTE:* ${apelido}\n--------------------------------\n\n`;
+            msg += `*ITENS:* \n`;
+            Object.keys(carrinho).forEach(n => msg += `🔹 *${carrinho[n].qtd}x* ${n}\n`);
+            msg += `\n--------------------------------\n💰 *TOTAL:* R$ ${total.toFixed(2)}\n💳 *PAGAMENTO:* ${formaPgto}\n--------------------------------\n_Obrigada pela preferência!_ 😍`;
+            
+            window.open(`https://wa.me/5511973019207?text=${encodeURIComponent(msg)}`);
+            carrinho = {}; total = 0; renderizar();
+        } catch (e) { alert("Erro ao salvar pedido!"); }
     }
-
-    // --- FUNÇÃO PARA ALTERNAR ABAS ---
-window.mudarAba = (tipo) => {
-    const isLogin = tipo === 'login';
-    document.getElementById('form-login').style.display = isLogin ? 'block' : 'none';
-    document.getElementById('form-cadastro').style.display = isLogin ? 'none' : 'block';
-    
-    document.getElementById('tab-login').style.color = isLogin ? '#d63384' : '#aaa';
-    document.getElementById('tab-login').style.borderBottom = isLogin ? '2px solid #d63384' : 'none';
-    document.getElementById('tab-cadastro').style.color = isLogin ? '#aaa' : '#d63384';
-    document.getElementById('tab-cadastro').style.borderBottom = isLogin ? 'none' : '2px solid #d63384';
-};
-
-// --- FUNÇÃO DE LOGIN ---
-window.btnLogin = () => {
-    const email = document.getElementById('loginEmail').value;
-    const senha = document.getElementById('loginSenha').value;
-
-    if (!email || !senha) return alert("Por favor, preencha e-mail e senha!");
-
-    signInWithEmailAndPassword(auth, email, senha)
-        .catch(e => alert("Erro ao entrar: Verifique se o e-mail e senha estão corretos."));
-};
-
-// --- FUNÇÃO DE CADASTRO ---
-window.btnCadastrar = () => {
-    const nome = document.getElementById('regNome').value;
-    const email = document.getElementById('regEmail').value;
-    const senha = document.getElementById('regSenha').value;
-
-    if (!nome || !email || !senha) return alert("Preencha todos os campos!");
-
-    createUserWithEmailAndPassword(auth, email, senha)
-        .then((res) => {
-            // Salva o apelido para sair no WhatsApp do pedido
-            return updateProfile(res.user, { displayName: nome });
-        })
-        .then(() => alert("Cadastro realizado com sucesso!"))
-        .catch(e => alert("Erro ao cadastrar: " + e.message));
-};
 </script>
 </body>
 </html>
