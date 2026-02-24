@@ -13,10 +13,11 @@
         input { padding: 12px; border: 1px solid #ffc1d1; border-radius: 10px; outline: none; }
         .btn { padding: 12px 15px; border: none; border-radius: 10px; cursor: pointer; font-weight: bold; transition: 0.3s; }
         .btn-add { background: var(--doce-rosa); color: white; width: 100%; margin-bottom: 10px; }
-        .item-gestao { display: flex; justify-content: space-between; align-items: center; padding: 12px; border-bottom: 1px dashed var(--doce-rosa); }
+        .item-gestao { display: flex; justify-content: space-between; align-items: center; padding: 12px; border-bottom: 1px dashed var(--doce-rosa); margin-bottom: 5px;}
         .controles { display: flex; align-items: center; gap: 8px; }
         .btn-mini { padding: 5px 10px; border-radius: 5px; border: none; cursor: pointer; font-size: 0.8em; }
         .financeiro-box { background: #e3f2fd; padding: 15px; border-radius: 12px; margin: 20px 0; display: flex; justify-content: space-around; font-weight: bold; }
+        .pedido-card { background: white; border: 1px solid #eee; padding: 15px; border-radius: 12px; margin-bottom: 15px; border-left: 5px solid #ff85a1; }
     </style>
 </head>
 <body>
@@ -34,15 +35,15 @@
 
     <hr>
     <h3>📦 Controle de Estoque</h3>
-    <div id="lista-estoque">Carregando...</div>
+    <div id="lista-estoque">Carregando estoque...</div>
 
     <hr>
-    <h3>💰 Financeiro Quinzenal</h3>
+    <h3>💰 Financeiro e Pedidos</h3>
     <div class="financeiro-box">
         <div>Pendentes: <span id="qtd-p">0</span></div>
         <div>A Receber: R$ <span id="val-p">0,00</span></div>
     </div>
-    <div id="lista-pedidos"></div>
+    <div id="lista-pedidos">Carregando pedidos...</div>
 
     <button onclick="location.href='index.html'" style="width:100%; margin-top:20px; background:#ddd; border:none; padding:10px; border-radius:10px; cursor:pointer;">Voltar ao Cardápio</button>
 </div>
@@ -64,11 +65,9 @@
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const db = getFirestore(app);
-    // No topo do script do painel.html
     const ADMINS = ["carlos.sabino@outlook.com.br", "lialmeyda@hotmail.com"];
     
     onAuthStateChanged(auth, (user) => {
-        // Agora checamos se o user existe E se o e-mail está na lista
         if (user && ADMINS.includes(user.email)) {
             document.getElementById('area-admin').style.display = 'block';
             iniciarEscutas();
@@ -79,66 +78,65 @@
     });
 
     function iniciarEscutas() {
-        // Atualiza Estoque em tempo real
-        // Financeiro (No painel.html)
-    onSnapshot(collection(db, "pedidos"), (snap) => {
-        const cont = document.getElementById('lista-financeiro');
-        let qP = 0, vP = 0;
-        cont.innerHTML = "<h4>Histórico de Pedidos:</h4>";
-        
-        snap.forEach(sDoc => {
-            const ped = sDoc.data();
-            if(ped.status === "Pendente") { qP++; vP += ped.total; }
-            
-            // Formatar a lista de itens do pedido
-            let listaItens = "";
-            if(ped.itens) {
-                Object.keys(ped.itens).forEach(nome => {
-                    listaItens += `<small>• ${ped.itens[nome].qtd}x ${nome}</small><br>`;
-                });
-            }
-    
-            cont.innerHTML += `<div class="pedido-item" style="border-left: 4px solid ${ped.status === 'Pendente' ? '#ff85a1' : '#25d366'}; padding-left: 10px; margin-bottom: 15px;">
-                <div>
-                    <b>${ped.cliente}</b> (#${ped.pedidoId})<br>
-                    ${listaItens}
-                    <span style="font-size: 0.8em; color: #666;">Pgto: ${ped.pagamento || 'N/A'}</span><br>
-                    R$ ${ped.total.toFixed(2)} - <strong>${ped.status}</strong>
-                </div>
-                ${ped.status === "Pendente" ? `<button class="btn-baixa" onclick="baixar('${sDoc.id}')">Dar Baixa</button>` : ''}
-            </div>`;
+        // 1. ESCUTA DE ESTOQUE (O que faltava!)
+        onSnapshot(collection(db, "produtos"), (snap) => {
+            const cont = document.getElementById('lista-estoque');
+            cont.innerHTML = "";
+            snap.forEach(d => {
+                const item = d.data();
+                cont.innerHTML += `
+                    <div class="item-gestao">
+                        <span><b>${item.nome}</b> (Qtd: ${item.estoque})</span>
+                        <div class="controles">
+                            <button class="btn-mini" style="background:#a2d2ff" onclick="ajustarEstoque('${d.id}', ${item.estoque + 1})">+</button>
+                            <button class="btn-mini" style="background:#a2d2ff" onclick="ajustarEstoque('${d.id}', ${item.estoque - 1})">-</button>
+                            <button class="btn-mini" style="background:#ff7675; color:white;" onclick="removerDoce('${d.id}')">Excluir</button>
+                        </div>
+                    </div>`;
+            });
         });
-        document.getElementById('qtd-p').innerText = qP;
-        document.getElementById('val-p').innerText = vP.toFixed(2);
-    });
 
-        // Atualiza Financeiro em tempo real
+        // 2. ESCUTA DE PEDIDOS (Consolidada com Itens)
         onSnapshot(collection(db, "pedidos"), (snap) => {
             const cont = document.getElementById('lista-pedidos');
             let qP = 0, vP = 0;
             cont.innerHTML = "";
-            snap.forEach(d => {
-                const ped = d.data();
+            
+            snap.forEach(sDoc => {
+                const ped = sDoc.data();
                 if(ped.status === "Pendente") { qP++; vP += ped.total; }
+                
+                let listaItens = "";
+                if(ped.itens) {
+                    Object.keys(ped.itens).forEach(nome => {
+                        listaItens += `<small>• ${ped.itens[nome].qtd}x ${nome}</small><br>`;
+                    });
+                }
+
                 cont.innerHTML += `
-                    <div class="item-gestao" style="font-size:0.9em;">
-                        <span><b>#${ped.pedidoId}</b> - ${ped.cliente}<br>Total: R$ ${ped.total.toFixed(2)}</span>
-                        ${ped.status === "Pendente" ? `<button class="btn-mini" style="background:#25d366; color:white;" onclick="baixarPedido('${d.id}')">Confirmar Pago</button>` : '✅ Pago'}
-                    </div>`;
+                <div class="pedido-card" style="border-left-color: ${ped.status === 'Pendente' ? '#ff85a1' : '#25d366'}">
+                    <b>${ped.cliente}</b> <small>(#${ped.pedidoId})</small><br>
+                    <div style="margin: 8px 0;">${listaItens}</div>
+                    <span style="font-size: 0.8em; color: #666;">Pgto: ${ped.pagamento || 'N/A'}</span><br>
+                    <strong>R$ ${ped.total.toFixed(2)}</strong> - <i>${ped.status}</i><br>
+                    ${ped.status === "Pendente" ? 
+                        `<button class="btn-mini" style="background:#25d366; color:white; margin-top:10px;" onclick="baixarPedido('${sDoc.id}')">Confirmar Pagamento</button>` 
+                        : '✅ Pago'}
+                </div>`;
             });
             document.getElementById('qtd-p').innerText = qP;
             document.getElementById('val-p').innerText = vP.toFixed(2);
         });
     }
 
-    // FUNÇÕES DE AÇÃO (Vinculadas ao Window para funcionar no HTML)
+    // Ações globais
     document.getElementById('btnSalvarProduto').onclick = async () => {
         const nome = document.getElementById('novo-nome').value;
         const preco = parseFloat(document.getElementById('novo-preco').value);
         const estoque = parseInt(document.getElementById('novo-estoque').value);
-        if(!nome || isNaN(preco)) return alert("Preencha tudo corretamente!");
+        if(!nome || isNaN(preco)) return alert("Dados inválidos!");
         await addDoc(collection(db, "produtos"), { nome, preco, estoque });
-        alert("Doce adicionado!");
+        alert("Doce cadastrado!");
         document.getElementById('novo-nome').value = "";
         document.getElementById('novo-preco').value = "";
         document.getElementById('novo-estoque').value = "";
