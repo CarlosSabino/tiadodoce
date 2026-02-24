@@ -3,37 +3,54 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Painel Tia do Doce</title>
+    <title>Painel da Tia - Gestão</title>
     <style>
-        body { font-family: sans-serif; background: url('fundo.png') fixed center; background-size: cover; padding: 20px; margin: 0; }
-        .admin-card { background: rgba(255, 255, 255, 0.96); max-width: 600px; margin: auto; padding: 25px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
-        .financeiro-box { background: #e3f2fd; padding: 15px; border-radius: 12px; margin: 20px 0; display: flex; justify-content: space-around; }
-        .pedido-item { border-bottom: 1px solid #eee; padding: 10px 0; display: flex; justify-content: space-between; align-items: center; }
-        .btn-baixa { background: #25d366; color: white; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer; }
-        .estoque-item { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px dashed #ff85a1; }
+        :root { --doce-rosa: #ff85a1; --doce-azul: #a2d2ff; }
+        body { font-family: 'Segoe UI', sans-serif; background: url('fundo.png') fixed center; background-size: cover; margin: 0; padding: 20px; }
+        .admin-card { background: rgba(255, 255, 255, 0.96); backdrop-filter: blur(10px); max-width: 650px; margin: auto; padding: 25px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); border: 2px solid white; }
+        h1, h3 { color: var(--doce-rosa); text-align: center; }
+        .form-group { display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; padding: 15px; background: rgba(255, 245, 248, 0.8); border-radius: 12px; }
+        input { padding: 12px; border: 1px solid #ffc1d1; border-radius: 10px; outline: none; }
+        .btn { padding: 12px 15px; border: none; border-radius: 10px; cursor: pointer; font-weight: bold; transition: 0.3s; }
+        .btn-add { background: var(--doce-rosa); color: white; width: 100%; margin-bottom: 10px; }
+        .item-gestao { display: flex; justify-content: space-between; align-items: center; padding: 12px; border-bottom: 1px dashed var(--doce-rosa); }
+        .controles { display: flex; align-items: center; gap: 8px; }
+        .btn-mini { padding: 5px 10px; border-radius: 5px; border: none; cursor: pointer; font-size: 0.8em; }
+        .financeiro-box { background: #e3f2fd; padding: 15px; border-radius: 12px; margin: 20px 0; display: flex; justify-content: space-around; font-weight: bold; }
     </style>
 </head>
 <body>
-    <div class="admin-card" id="painel" style="display:none;">
-        <h1 style="color:#ff85a1; text-align:center;">Painel da Tia 🛠️</h1>
-        
-        <h3>📦 Estoque</h3>
-        <div id="lista-estoque"></div>
 
-        <h3>💰 Financeiro Quinzenal</h3>
-        <div class="financeiro-box">
-            <div>Pendentes: <b id="qtd-p">0</b></div>
-            <div>A Receber: <b>R$ <span id="val-p">0,00</span></b></div>
-        </div>
-        <div id="lista-financeiro"></div>
-        
-        <button onclick="location.href='index.html'" style="margin-top:20px; cursor:pointer;">Voltar</button>
+<div class="admin-card" id="area-admin" style="display:none;">
+    <h1>Painel de Gestão 🛠️</h1>
+    
+    <div class="form-group">
+        <h3>Cadastrar Novo Doce</h3>
+        <input type="text" id="novo-nome" placeholder="Nome do Doce">
+        <input type="number" id="novo-preco" placeholder="Preço (ex: 12.50)">
+        <input type="number" id="novo-estoque" placeholder="Qtd Inicial">
+        <button class="btn btn-add" id="btnSalvarProduto">Adicionar ao Cardápio</button>
     </div>
+
+    <hr>
+    <h3>📦 Controle de Estoque</h3>
+    <div id="lista-estoque">Carregando...</div>
+
+    <hr>
+    <h3>💰 Financeiro Quinzenal</h3>
+    <div class="financeiro-box">
+        <div>Pendentes: <span id="qtd-p">0</span></div>
+        <div>A Receber: R$ <span id="val-p">0,00</span></div>
+    </div>
+    <div id="lista-pedidos"></div>
+
+    <button onclick="location.href='index.html'" style="width:100%; margin-top:20px; background:#ddd; border:none; padding:10px; border-radius:10px; cursor:pointer;">Voltar ao Cardápio</button>
+</div>
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-    import { getFirestore, collection, onSnapshot, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    import { getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
     const firebaseConfig = {
         apiKey: "AIzaSyB6FUb-KoF6S4h-y70trrcElPb2AYuUogM",
@@ -47,47 +64,81 @@
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const db = getFirestore(app);
-    const ADMIN = "carlos.sabino@outlook.com.br";
+    const EMAIL_ADMIN = "carlos.sabino@outlook.com.br";
 
     onAuthStateChanged(auth, (user) => {
-        if(user && user.email === ADMIN) {
-            document.getElementById('painel').style.display = 'block';
-            carregarTudo();
+        if (user && user.email === EMAIL_ADMIN) {
+            document.getElementById('area-admin').style.display = 'block';
+            iniciarEscutas();
         } else {
+            alert("Acesso restrito!");
             window.location.href = "index.html";
         }
     });
 
-    function carregarTudo() {
-        // Estoque
+    function iniciarEscutas() {
+        // Atualiza Estoque em tempo real
         onSnapshot(collection(db, "produtos"), (snap) => {
             const cont = document.getElementById('lista-estoque');
             cont.innerHTML = "";
-            snap.forEach(sDoc => {
-                const p = sDoc.data();
-                cont.innerHTML += `<div class="estoque-item"><span>${p.nome}</span> <span>Qtd: ${p.estoque}</span></div>`;
+            snap.forEach(d => {
+                const item = d.data();
+                const id = d.id;
+                cont.innerHTML += `
+                    <div class="item-gestao">
+                        <span><b>${item.nome}</b> (R$ ${item.preco.toFixed(2)})</span>
+                        <div class="controles">
+                            <button class="btn-mini" style="background:#a2d2ff" onclick="ajustarEstoque('${id}', ${item.estoque - 1})">-</button>
+                            <span>${item.estoque}</span>
+                            <button class="btn-mini" style="background:#a2d2ff" onclick="ajustarEstoque('${id}', ${item.estoque + 1})">+</button>
+                            <button class="btn-mini" style="background:#ff7675; color:white;" onclick="removerDoce('${id}')">Excluir</button>
+                        </div>
+                    </div>`;
             });
         });
 
-        // Financeiro
+        // Atualiza Financeiro em tempo real
         onSnapshot(collection(db, "pedidos"), (snap) => {
-            const cont = document.getElementById('lista-financeiro');
+            const cont = document.getElementById('lista-pedidos');
             let qP = 0, vP = 0;
-            cont.innerHTML = "<h4>Histórico de Pedidos:</h4>";
-            snap.forEach(sDoc => {
-                const ped = sDoc.data();
+            cont.innerHTML = "";
+            snap.forEach(d => {
+                const ped = d.data();
                 if(ped.status === "Pendente") { qP++; vP += ped.total; }
-                cont.innerHTML += `<div class="pedido-item">
-                    <div><b>${ped.cliente}</b> (#${ped.pedidoId})<br>R$ ${ped.total.toFixed(2)} - ${ped.status}</div>
-                    ${ped.status === "Pendente" ? `<button class="btn-baixa" onclick="baixar('${sDoc.id}')">Baixar</button>` : ''}
-                </div>`;
+                cont.innerHTML += `
+                    <div class="item-gestao" style="font-size:0.9em;">
+                        <span><b>#${ped.pedidoId}</b> - ${ped.cliente}<br>Total: R$ ${ped.total.toFixed(2)}</span>
+                        ${ped.status === "Pendente" ? `<button class="btn-mini" style="background:#25d366; color:white;" onclick="baixarPedido('${d.id}')">Confirmar Pago</button>` : '✅ Pago'}
+                    </div>`;
             });
             document.getElementById('qtd-p').innerText = qP;
             document.getElementById('val-p').innerText = vP.toFixed(2);
         });
     }
 
-    window.baixar = async (id) => {
+    // FUNÇÕES DE AÇÃO (Vinculadas ao Window para funcionar no HTML)
+    document.getElementById('btnSalvarProduto').onclick = async () => {
+        const nome = document.getElementById('novo-nome').value;
+        const preco = parseFloat(document.getElementById('novo-preco').value);
+        const estoque = parseInt(document.getElementById('novo-estoque').value);
+        if(!nome || isNaN(preco)) return alert("Preencha tudo corretamente!");
+        await addDoc(collection(db, "produtos"), { nome, preco, estoque });
+        alert("Doce adicionado!");
+        document.getElementById('novo-nome').value = "";
+        document.getElementById('novo-preco').value = "";
+        document.getElementById('novo-estoque').value = "";
+    };
+
+    window.ajustarEstoque = async (id, valor) => {
+        if(valor < 0) return;
+        await updateDoc(doc(db, "produtos", id), { estoque: valor });
+    };
+
+    window.removerDoce = async (id) => {
+        if(confirm("Deseja apagar esse doce?")) await deleteDoc(doc(db, "produtos", id));
+    };
+
+    window.baixarPedido = async (id) => {
         await updateDoc(doc(db, "pedidos", id), { status: "Pago" });
     };
 </script>
