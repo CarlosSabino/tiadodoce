@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Painel da Tia - Gestão</title>
+    <title>Painel da Tia - Gestão de Vendas</title>
     <style>
         :root { --doce-rosa: #ff85a1; --doce-azul: #a2d2ff; --doce-verde: #25d366; --doce-cancel: #ff7675; }
         body { font-family: 'Segoe UI', sans-serif; background: url('fundo.png') fixed center; background-size: cover; margin: 0; padding: 20px; }
@@ -15,9 +15,10 @@
         .btn-add { background: var(--doce-rosa); color: white; width: 100%; margin-bottom: 10px; }
         .item-gestao { display: flex; justify-content: space-between; align-items: center; padding: 12px; border-bottom: 1px dashed var(--doce-rosa); margin-bottom: 5px; }
         .controles { display: flex; align-items: center; gap: 8px; }
-        .btn-mini { padding: 6px 12px; border-radius: 8px; border: none; cursor: pointer; font-size: 0.85em; font-weight: bold; }
-        .financeiro-box { background: #e3f2fd; padding: 15px; border-radius: 12px; margin: 20px 0; display: flex; justify-content: space-around; font-weight: bold; color: #1976d2; }
-        .pedido-card { background: white; border: 1px solid #eee; padding: 15px; border-radius: 12px; margin-bottom: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .btn-mini { padding: 8px 12px; border-radius: 8px; border: none; cursor: pointer; font-size: 0.8em; font-weight: bold; }
+        .financeiro-box { background: #e3f2fd; padding: 15px; border-radius: 12px; margin: 20px 0; display: flex; justify-content: space-around; font-weight: bold; color: #1976d2; border: 1px solid var(--doce-azul); }
+        .pedido-card { background: white; border: 1px solid #eee; padding: 15px; border-radius: 12px; margin-bottom: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); transition: 0.3s; }
+        .status-badge { font-size: 0.75em; padding: 3px 8px; border-radius: 5px; margin-left: 5px; font-weight: bold; text-transform: uppercase; }
     </style>
 </head>
 <body>
@@ -28,30 +29,30 @@
     <div class="form-group">
         <h3>Cadastrar Novo Doce</h3>
         <input type="text" id="novo-nome" placeholder="Nome do Doce">
-        <input type="number" id="novo-preco" step="0.01" placeholder="Preço (ex: 12.50)">
+        <input type="number" id="novo-preco" step="0.01" placeholder="Preço (R$)">
         <input type="number" id="novo-estoque" placeholder="Qtd Inicial">
         <button class="btn btn-add" id="btnSalvarProduto">Adicionar ao Cardápio</button>
     </div>
 
     <hr>
-    <h3>📦 Controle de Estoque</h3>
+    <h3>📦 Estoque Atual</h3>
     <div id="lista-estoque">Buscando estoque...</div>
 
     <hr>
-    <h3>💰 Financeiro e Pedidos</h3>
+    <h3>💰 Fechamento de Quinzena</h3>
     <div class="financeiro-box">
-        <div>Pendentes: <span id="qtd-p">0</span></div>
-        <div>A Receber: R$ <span id="val-p">0,00</span></div>
+        <div>Abertos: <span id="qtd-p">0</span></div>
+        <div>Total a Receber: R$ <span id="val-p">0,00</span></div>
     </div>
     <div id="lista-pedidos">Buscando pedidos...</div>
 
-    <button onclick="location.href='index.html'" style="width:100%; margin-top:20px; background:#ddd; border:none; padding:12px; border-radius:10px; cursor:pointer; font-weight:bold;">Voltar ao Cardápio</button>
+    <button onclick="location.href='index.html'" style="width:100%; margin-top:20px; background:#ddd; border:none; padding:12px; border-radius:10px; cursor:pointer; font-weight:bold;">Sair do Painel</button>
 </div>
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-    import { getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, query, orderBy } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    import { getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
     const firebaseConfig = {
         apiKey: "AIzaSyB6FUb-KoF6S4h-y70trrcElPb2AYuUogM",
@@ -72,13 +73,12 @@
             document.getElementById('area-admin').style.display = 'block';
             iniciarEscutas();
         } else {
-            alert("Acesso restrito!");
             window.location.href = "index.html";
         }
     });
 
     function iniciarEscutas() {
-        // 1. MONITORAMENTO DE ESTOQUE
+        // Monitor de Estoque
         onSnapshot(collection(db, "produtos"), (snap) => {
             const cont = document.getElementById('lista-estoque');
             cont.innerHTML = "";
@@ -86,81 +86,80 @@
                 const item = d.data();
                 cont.innerHTML += `
                     <div class="item-gestao">
-                        <span><b>${item.nome}</b> (Qtd: ${item.estoque})</span>
+                        <span><b>${item.nome}</b> (Saldo: ${item.estoque})</span>
                         <div class="controles">
                             <button class="btn-mini" style="background:var(--doce-azul)" onclick="ajustarEstoque('${d.id}', ${item.estoque + 1})">+</button>
                             <button class="btn-mini" style="background:var(--doce-azul)" onclick="ajustarEstoque('${d.id}', ${item.estoque - 1})">-</button>
-                            <button class="btn-mini" style="background:var(--doce-cancel); color:white;" onclick="removerDoce('${d.id}')">Apagar</button>
+                            <button class="btn-mini" style="background:var(--doce-cancel); color:white;" onclick="removerDoce('${d.id}')">X</button>
                         </div>
                     </div>`;
             });
         });
 
-        // 2. MONITORAMENTO DE PEDIDOS E FINANCEIRO
+        // Monitor de Pedidos e Controle de Quinzena
         onSnapshot(collection(db, "pedidos"), (snap) => {
             const cont = document.getElementById('lista-pedidos');
-            let qP = 0, vP = 0;
+            let qAbertos = 0, vTotal = 0;
             cont.innerHTML = "";
             
-            // Ordenar por data manualmente se não houver índice (mais seguro para evitar erros no Firebase console)
             const docs = [];
             snap.forEach(d => docs.push({ id: d.id, ...d.data() }));
             docs.sort((a, b) => new Date(b.data) - new Date(a.data));
 
             docs.forEach(ped => {
-                // Só soma no financeiro o que está Pendente ou Pago (ignora cancelado)
-                if(ped.status === "Pendente") { qP++; vP += ped.total; }
+                // Cálculo financeiro: Só soma o que não foi pago e não foi cancelado
+                if(ped.status !== "Pago" && ped.status !== "Cancelado") { 
+                    qAbertos++; 
+                    vTotal += ped.total; 
+                }
                 
                 let listaItens = "";
                 if(ped.itens) {
-                    Object.keys(ped.itens).forEach(n => {
-                        listaItens += `<small>• ${ped.itens[n].qtd}x ${n}</small><br>`;
-                    });
+                    Object.keys(ped.itens).forEach(n => listaItens += `<small>• ${ped.itens[n].qtd}x ${n}</small><br>`);
                 }
 
-                const corLado = ped.status === "Pendente" ? "var(--doce-rosa)" : 
-                               (ped.status === "Pago" ? "var(--doce-verde)" : 
-                               (ped.status === "Entregue" ? "var(--doce-azul)" : "var(--doce-cancel)"));
+                const foiPago = ped.status === "Pago";
+                const foiEntregue = ped.entregue || false;
 
                 cont.innerHTML += `
-                <div class="pedido-card" style="border-left: 6px solid ${corLado}">
-                    <div style="display:flex; justify-content:space-between;">
+                <div class="pedido-card" style="border-left: 6px solid ${foiPago ? 'var(--doce-verde)' : 'var(--doce-rosa)'}">
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
                         <b>${ped.cliente}</b>
-                        <small>#${ped.pedidoId}</small>
+                        <span>
+                            ${foiEntregue ? '<span class="status-badge" style="background:var(--doce-azul); color:white;">Entregue</span>' : ''}
+                            ${ped.status === "Cancelado" ? '<span class="status-badge" style="background:var(--doce-cancel); color:white;">Cancelado</span>' : ''}
+                        </span>
                     </div>
-                    <div style="margin: 10px 0; color: #555;">${listaItens}</div>
-                    <div style="font-size: 0.85em; color: #777;">
-                        💰 R$ ${ped.total.toFixed(2)} | 💳 ${ped.pagamento || 'N/A'}<br>
-                        📅 ${new Date(ped.data).toLocaleString()}
+                    <div style="margin: 10px 0; color: #444;">${listaItens}</div>
+                    <div style="font-size: 0.85em; color: #666;">
+                        💰 R$ ${ped.total.toFixed(2)} | 💳 ${ped.pagamento} | 📅 ${new Date(ped.data).toLocaleDateString()}
                     </div>
-                    <div style="margin-top: 12px; display: flex; gap: 8px;">
-                        ${ped.status === "Pendente" ? `
-                            <button class="btn-mini" style="background:var(--doce-verde); color:white;" onclick="baixarPedido('${ped.id}')">Pago</button>
-                            <button class="btn-mini" style="background:var(--doce-cancel); color:white;" onclick="cancelarPedido('${ped.id}')">Cancelar</button>
-                        ` : ''}
+                    
+                    <div style="margin-top: 12px; display: flex; gap: 8px; flex-wrap: wrap;">
+                        ${!foiPago && ped.status !== "Cancelado" ? 
+                            `<button class="btn-mini" style="background:var(--doce-verde); color:white;" onclick="baixarPedido('${ped.id}')">Confirmar Pagamento</button>` : ''}
                         
-                        ${ped.status === "Pago" ? `
-                            <button class="btn-mini" style="background:var(--doce-azul); color:white;" onclick="entregarPedido('${ped.id}')">Confirmar Entrega ✅</button>
-                        ` : ''}
+                        ${!foiEntregue && ped.status !== "Cancelado" ? 
+                            `<button class="btn-mini" style="background:var(--doce-azul); color:white;" onclick="entregarPedido('${ped.id}')">Confirmar Entrega</button>` : ''}
                         
-                        ${ped.status === "Entregue" ? '<span style="color:var(--doce-azul); font-weight:bold; font-size:0.9em;">✅ Entregue</span>' : ''}
-                        ${ped.status === "Cancelado" ? '<span style="color:var(--doce-cancel); font-weight:bold; font-size:0.9em;">❌ Pedido Cancelado</span>' : ''}
+                        ${ped.status === "Pendente" && !foiEntregue ? 
+                            `<button class="btn-mini" style="background:var(--doce-cancel); color:white;" onclick="cancelarPedido('${ped.id}')">Cancelar</button>` : ''}
                     </div>
                 </div>`;
             });
-            document.getElementById('qtd-p').innerText = qP;
-            document.getElementById('val-p').innerText = vP.toFixed(2);
+            document.getElementById('qtd-p').innerText = qAbertos;
+            document.getElementById('val-p').innerText = vTotal.toFixed(2);
         });
     }
 
-    // FUNÇÕES DE AÇÃO GLOBAIS
+    // AÇÕES GLOBAIS
     document.getElementById('btnSalvarProduto').onclick = async () => {
         const nome = document.getElementById('novo-nome').value;
         const preco = parseFloat(document.getElementById('novo-preco').value);
         const estoque = parseInt(document.getElementById('novo-estoque').value);
         if(!nome || isNaN(preco)) return alert("Preencha o nome e preço!");
         await addDoc(collection(db, "produtos"), { nome, preco, estoque: estoque || 0 });
-        alert("Doce adicionado ao cardápio!");
+        alert("Doce cadastrado!");
         document.getElementById('novo-nome').value = ""; document.getElementById('novo-preco').value = ""; document.getElementById('novo-estoque').value = "";
     };
 
@@ -170,21 +169,25 @@
     };
 
     window.removerDoce = async (id) => {
-        if(confirm("Tem certeza que quer remover este doce do cardápio?")) await deleteDoc(doc(db, "produtos", id));
+        if(confirm("Remover este doce?")) await deleteDoc(doc(db, "produtos", id));
     };
 
     window.baixarPedido = async (id) => {
-        await updateDoc(doc(db, "pedidos", id), { status: "Pago" });
-    };
-
-    window.cancelarPedido = async (id) => {
-        if(confirm("Deseja cancelar este pedido? O estoque não voltará automaticamente (ajuste manual se necessário).")) {
-            await updateDoc(doc(db, "pedidos", id), { status: "Cancelado" });
+        if(confirm("Marcar pedido como PAGO?")) {
+            await updateDoc(doc(db, "pedidos", id), { status: "Pago" });
         }
     };
 
     window.entregarPedido = async (id) => {
-        await updateDoc(doc(db, "pedidos", id), { status: "Entregue", dataEntrega: new Date().toISOString() });
+        if(confirm("Confirmar que o cliente já recebeu o doce?")) {
+            await updateDoc(doc(db, "pedidos", id), { entregue: true });
+        }
+    };
+
+    window.cancelarPedido = async (id) => {
+        if(confirm("Cancelar este pedido?")) {
+            await updateDoc(doc(db, "pedidos", id), { status: "Cancelado" });
+        }
     };
 
 </script>
