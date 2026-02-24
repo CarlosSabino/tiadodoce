@@ -74,7 +74,7 @@
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut, updateProfile } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-    import { getFirestore, collection, getDocs, addDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    import { getFirestore, collection, getDocs, addDoc, query, where, updateDoc, doc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
     const firebaseConfig = {
         apiKey: "AIzaSyB6FUb-KoF6S4h-y70trrcElPb2AYuUogM",
@@ -88,10 +88,8 @@
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const db = getFirestore(app);
-    
     const ADMINS = ["carlos.sabino@outlook.com.br", "lialmeyda@hotmail.com"]; 
 
-    // --- FUNÇÕES DE AUTENTICAÇÃO (MÓDULO) ---
     window.btnLogin = () => {
         const e = document.getElementById('loginEmail').value;
         const s = document.getElementById('loginSenha').value;
@@ -109,7 +107,6 @@
             .catch(err => alert("Erro ao cadastrar: " + err.message));
     };
 
-    // CORREÇÃO: Função Sair pendurada no Window
     window.logout = () => {
         signOut(auth).catch(err => alert("Erro ao sair: " + err.message));
     };
@@ -142,8 +139,8 @@
         const snap = await getDocs(collection(db, "produtos"));
         const lista = document.getElementById('lista-produtos');
         lista.innerHTML = "";
-        snap.forEach(doc => {
-            const p = doc.data();
+        snap.forEach(docSnap => {
+            const p = docSnap.data();
             lista.innerHTML += `<div class="produto">
                 <div><strong>${p.nome}</strong><br>R$ ${p.preco.toFixed(2)}</div>
                 <button class="btn-add" onclick="adicionar('${p.nome}', ${p.preco})" ${p.estoque <= 0 ? 'disabled' : ''}>+</button>
@@ -151,9 +148,15 @@
         });
     }
 
+    // Tornar funções e variáveis disponíveis globalmente para o segundo script
     window.db = db;
     window.addDoc = addDoc;
+    window.updateDoc = updateDoc;
+    window.doc = doc;
     window.collection = collection;
+    window.query = query;
+    window.where = where;
+    window.getDocs = getDocs;
     window.auth = auth;
 </script>
 
@@ -201,53 +204,58 @@
     }
 
     window.enviarPedido = async () => {
-    const formaPgto = document.getElementById('forma-pagamento').value;
-    if(!formaPgto) return alert("Escolha a forma de pagamento!");
-    if(total <= 0) return alert("Carrinho vazio!");
+        const formaPgto = document.getElementById('forma-pagamento').value;
+        if(!formaPgto) return alert("Escolha a forma de pagamento!");
+        if(total <= 0) return alert("Carrinho vazio!");
 
-    const pedidoId = Math.random().toString(36).substring(2, 6).toUpperCase();
-    const user = window.auth.currentUser;
-    const apelido = user ? user.displayName : "Cliente";
+        const pedidoId = Math.random().toString(36).substring(2, 6).toUpperCase();
+        const user = window.auth.currentUser;
+        const apelido = user ? user.displayName : "Cliente";
 
-    try {
-        // 1. SALVAR O PEDIDO NO FIREBASE
-        await window.addDoc(window.collection(window.db, "pedidos"), {
-            pedidoId, cliente: apelido, total, status: "Pendente", 
-            pagamento: formaPgto, data: new Date().toISOString(),
-            itens: carrinho // Guardamos os itens para o painel ler depois
-        });
-
-        // 2. BAIXA AUTOMÁTICA DE ESTOQUE (A Mágica aqui!)
-        const { getDocs, query, where, updateDoc, doc } = await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js");
-        
-        for (const nomeDoce in carrinho) {
-            const q = query(window.collection(window.db, "produtos"), where("nome", "==", nomeDoce));
-            const querySnapshot = await getDocs(q);
-            
-            querySnapshot.forEach(async (docSnap) => {
-                const novoEstoque = docSnap.data().estoque - carrinho[nomeDoce].qtd;
-                await updateDoc(doc(window.db, "produtos", docSnap.id), {
-                    estoque: novoEstoque >= 0 ? novoEstoque : 0
-                });
+        try {
+            // 1. SALVAR O PEDIDO NO FIREBASE
+            await window.addDoc(window.collection(window.db, "pedidos"), {
+                pedidoId, cliente: apelido, total, status: "Pendente", 
+                pagamento: formaPgto, data: new Date().toISOString(),
+                itens: carrinho
             });
-        }
 
-        // 3. MENSAGEM DO WHATSAPP
-        let msg = `*NOVO PEDIDO DA TIA* 🧁✨\n--------------------------------\n`;
-        msg += `🆔 *CÓDIGO:* #${pedidoId}\n👤 *CLIENTE:* ${apelido}\n--------------------------------\n\n`;
-        msg += `*ITENS:* \n`;
-        Object.keys(carrinho).forEach(n => msg += `🔹 *${carrinho[n].qtd}x* ${n}\n`);
-        msg += `\n--------------------------------\n💰 *TOTAL:* R$ ${total.toFixed(2)}\n💳 *PAGAMENTO:* ${formaPgto}\n--------------------------------\n_Obrigada pela preferência!_ 😍`;
-        
-        window.open(`https://wa.me/5511984756872?text=${encodeURIComponent(msg)}`);
-        
-        carrinho = {}; total = 0; renderizar();
-        alert("Pedido enviado e estoque atualizado!");
-    } catch (e) { 
-        console.error(e);
-        alert("Erro ao processar pedido!"); 
+            // 2. BAIXA AUTOMÁTICA DE ESTOQUE
+            for (const nomeDoce in carrinho) {
+                const q = window.query(window.collection(window.db, "produtos"), window.where("nome", "==", nomeDoce));
+                const querySnapshot = await window.getDocs(q);
+                
+                querySnapshot.forEach(async (docSnap) => {
+                    const novoEstoque = docSnap.data().estoque - carrinho[nomeDoce].qtd;
+                    await window.updateDoc(window.doc(window.db, "produtos", docSnap.id), {
+                        estoque: novoEstoque >= 0 ? novoEstoque : 0
+                    });
+                });
+            }
+
+            // 3. MENSAGEM DO WHATSAPP
+            let msg = `*NOVO PEDIDO DA TIA* 🧁✨\n--------------------------------\n`;
+            msg += `🆔 *CÓDIGO:* #${pedidoId}\n👤 *CLIENTE:* ${apelido}\n--------------------------------\n\n`;
+            msg += `*ITENS:* \n`;
+            Object.keys(carrinho).forEach(n => msg += `🔹 *${carrinho[n].qtd}x* ${n}\n`);
+            msg += `\n--------------------------------\n💰 *TOTAL:* R$ ${total.toFixed(2)}\n💳 *PAGAMENTO:* ${formaPgto}\n--------------------------------\n_Obrigada pela preferência!_ 😍`;
+            
+            // Alerta de sucesso antes de redirecionar
+            alert("🎉 Pedido confirmado no sistema!\n\nAbrindo o WhatsApp para você enviar o comprovante.");
+            
+            window.open(`https://wa.me/5511984756872?text=${encodeURIComponent(msg)}`);
+            
+            // Limpa carrinho e reseta interface
+            carrinho = {}; 
+            total = 0; 
+            renderizar();
+            document.getElementById('forma-pagamento').value = "";
+            
+        } catch (e) { 
+            console.error(e);
+            alert("Erro ao processar pedido! Verifique sua conexão."); 
+        }
     }
-}
 </script>
 </body>
 </html>
