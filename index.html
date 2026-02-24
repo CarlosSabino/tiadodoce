@@ -88,33 +88,55 @@
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const db = getFirestore(app);
-    // 1. Defina a lista de e-mails permitidos
-const ADMINS = ["carlos.sabino@outlook.com.br", "lialmeyda@hotmail.com"]; 
+    
+    const ADMINS = ["carlos.sabino@outlook.com.br", "lialmeyda@hotmail.com"]; 
 
-onAuthStateChanged(auth, (user) => {
-    const sessaoAuth = document.getElementById('sessao-auth');
-    const sessaoCardapio = document.getElementById('sessao-cardapio');
-    const btnAdmin = document.getElementById('btn-admin-link');
-    const boasVindas = document.getElementById('boas-vindas');
+    // --- FUNÇÕES DE AUTENTICAÇÃO (MÓDULO) ---
+    window.btnLogin = () => {
+        const e = document.getElementById('loginEmail').value;
+        const s = document.getElementById('loginSenha').value;
+        if(!e || !s) return alert("Preencha e-mail e senha!");
+        signInWithEmailAndPassword(auth, e, s).catch(err => alert("Erro ao entrar: " + err.message));
+    };
 
-    if (user) {
-        sessaoAuth.style.display = 'none';
-        sessaoCardapio.style.display = 'block';
+    window.btnCadastrar = () => {
+        const nome = document.getElementById('regNome').value;
+        const e = document.getElementById('regEmail').value;
+        const s = document.getElementById('regSenha').value;
+        if(!nome || !e || !s) return alert("Preencha todos os campos!");
+        createUserWithEmailAndPassword(auth, e, s)
+            .then((res) => updateProfile(res.user, { displayName: nome }))
+            .catch(err => alert("Erro ao cadastrar: " + err.message));
+    };
 
-        // 2. Verifique se o e-mail logado está na nossa lista de ADMINS
-        if (ADMINS.includes(user.email)) {
-            boasVindas.innerText = "Oi, Tia! 🧁"; // Ou "Oi, Admin!"
-            btnAdmin.style.display = 'block';
+    // CORREÇÃO: Função Sair pendurada no Window
+    window.logout = () => {
+        signOut(auth).catch(err => alert("Erro ao sair: " + err.message));
+    };
+
+    onAuthStateChanged(auth, (user) => {
+        const sessaoAuth = document.getElementById('sessao-auth');
+        const sessaoCardapio = document.getElementById('sessao-cardapio');
+        const btnAdmin = document.getElementById('btn-admin-link');
+        const boasVindas = document.getElementById('boas-vindas');
+
+        if (user) {
+            sessaoAuth.style.display = 'none';
+            sessaoCardapio.style.display = 'block';
+
+            if (ADMINS.includes(user.email)) {
+                boasVindas.innerText = "Oi, Tia! 🧁";
+                btnAdmin.style.display = 'block';
+            } else {
+                boasVindas.innerText = "Oi, " + (user.displayName || "Cliente") + "! ✨";
+                btnAdmin.style.display = 'none';
+            }
+            carregarProdutos();
         } else {
-            boasVindas.innerText = "Oi, " + (user.displayName || "Cliente") + "! ✨";
-            btnAdmin.style.display = 'none';
+            sessaoAuth.style.display = 'block';
+            sessaoCardapio.style.display = 'none';
         }
-        carregarProdutos();
-    } else {
-        sessaoAuth.style.display = 'block';
-        sessaoCardapio.style.display = 'none';
-    }
-});
+    });
 
     async function carregarProdutos() {
         const snap = await getDocs(collection(db, "produtos"));
@@ -129,7 +151,6 @@ onAuthStateChanged(auth, (user) => {
         });
     }
 
-    // Exportando para o escopo global
     window.db = db;
     window.addDoc = addDoc;
     window.collection = collection;
