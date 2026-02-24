@@ -5,63 +5,43 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Painel Admin - Tia do Doce</title>
     <style>
-    :root { --doce-rosa: #ff85a1; --doce-azul: #a2d2ff; --dark: #2d3436; }
-    
-    body { 
-        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-        /* Usando a imagem que você subiu */
-        background-image: url('fundo.png'); 
-        background-size: cover;
-        background-position: center;
-        background-attachment: fixed;
-        padding: 20px; 
-        display: flex;
-        align-items: center;
-        min-height: 100vh;
-        margin: 0;
-    }
+        :root { --doce-rosa: #ff85a1; --doce-azul: #a2d2ff; --dark: #2d3436; }
+        
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            /* Ajustado para o nome correto do arquivo */
+            background-image: url('fundo.png'); 
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
 
-    .admin-card { 
-        background: rgba(255, 255, 255, 0.96); /* Fundo semi-transparente para ver o fundo */
-        backdrop-filter: blur(5px);
-        max-width: 600px; 
-        margin: auto; 
-        padding: 25px; 
-        border-radius: 20px; 
-        box-shadow: 0 10px 30px rgba(0,0,0,0.2); 
-        border: 2px solid white;
-    }
+        .admin-card { 
+            background: rgba(255, 255, 255, 0.96); 
+            backdrop-filter: blur(10px);
+            max-width: 600px; 
+            margin: auto; 
+            padding: 25px; 
+            border-radius: 20px; 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2); 
+            border: 2px solid white;
+        }
 
-    h1 { color: var(--doce-rosa); text-align: center; text-shadow: 1px 1px white; }
-    
-    .form-group { 
-        display: flex; 
-        flex-direction: column; 
-        gap: 10px; 
-        margin-bottom: 20px; 
-        padding: 15px; 
-        background: rgba(255, 245, 248, 0.8); 
-        border-radius: 12px; 
-    }
-
-    input { padding: 12px; border: 1px solid #ffc1d1; border-radius: 10px; outline: none; }
-    
-    .btn { padding: 12px 15px; border: none; border-radius: 10px; cursor: pointer; font-weight: bold; transition: 0.3s; }
-    .btn-add { background: var(--doce-rosa); color: white; width: 100%; box-shadow: 0 4px 0 #d63384; }
-    .btn-add:active { transform: translateY(3px); box-shadow: none; }
-
-    .item-admin { 
-        display: flex; 
-        justify-content: space-between; 
-        align-items: center; 
-        padding: 15px; 
-        border-bottom: 1px dashed var(--doce-rosa); 
-    }
-
-    .controles { display: flex; align-items: center; gap: 10px; }
-    .btn-estoque { background: var(--doce-azul); border: none; width: 35px; height: 35px; border-radius: 8px; font-weight: bold; cursor: pointer; }
-    .btn-delete { background: #ff7675; color: white; margin-left: 10px; font-size: 0.8em; padding: 5px 10px; }
-</style>
+        h1 { color: var(--doce-rosa); text-align: center; text-shadow: 1px 1px white; }
+        .form-group { display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; padding: 15px; background: rgba(255, 245, 248, 0.8); border-radius: 12px; }
+        input { padding: 12px; border: 1px solid #ffc1d1; border-radius: 10px; outline: none; }
+        .btn { padding: 12px 15px; border: none; border-radius: 10px; cursor: pointer; font-weight: bold; transition: 0.3s; }
+        .btn-add { background: var(--doce-rosa); color: white; width: 100%; box-shadow: 0 4px 0 #d63384; }
+        .item-admin { display: flex; justify-content: space-between; align-items: center; padding: 15px; border-bottom: 1px dashed var(--doce-rosa); }
+        .controles { display: flex; align-items: center; gap: 10px; }
+        .btn-estoque { background: var(--doce-azul); border: none; width: 35px; height: 35px; border-radius: 8px; font-weight: bold; cursor: pointer; }
+        .btn-delete { background: #ff7675; color: white; margin-left: 10px; font-size: 0.8em; padding: 5px 10px; border-radius: 5px; border: none; cursor: pointer;}
+    </style>
 </head>
 <body>
 
@@ -88,7 +68,7 @@
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
     import { getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-    
+
     const firebaseConfig = {
         apiKey: "AIzaSyB6FUb-KoF6S4h-y70trrcElPb2AYuUogM",
         authDomain: "tia-do-doce.firebaseapp.com",
@@ -97,25 +77,24 @@
         messagingSenderId: "766286783719",
         appId: "1:766286783719:web:f49c11f7190c88cc44ae42"
     };
-    
+
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const db = getFirestore(app);
-    
-    // --- 🛡️ TRAVA DE SEGURANÇA ---
-    const EMAIL_ADMIN = "carlos.sabino@outlook.com.br"; // <-- COLOQUE O E-MAIL DELA AQUI
-    
+
+    // E-mail que você definiu como admin
+    const EMAIL_ADMIN = "carlos.sabino@outlook.com.br"; 
+
     onAuthStateChanged(auth, (user) => {
         if (!user || user.email !== EMAIL_ADMIN) {
-            alert("Acesso negado! Apenas a Tia do Doce pode entrar aqui. 🛑");
-            window.location.href = "index.html"; // Redireciona para o cardápio
+            alert("Acesso negado!");
+            window.location.href = "index.html"; 
         } else {
-            carregarPainel(); // Se for ela, carrega as funções
+            carregarPainel();
         }
     });
-    
+
     function carregarPainel() {
-        // --- ESCUTAR MUDANÇAS EM TEMPO REAL ---
         onSnapshot(collection(db, "produtos"), (snapshot) => {
             const container = document.getElementById('lista-admin');
             container.innerHTML = "";
@@ -125,10 +104,7 @@
                 const div = document.createElement('div');
                 div.className = 'item-admin';
                 div.innerHTML = `
-                    <div>
-                        <strong>${item.nome}</strong><br>
-                        R$ ${Number(item.preco).toFixed(2)}
-                    </div>
+                    <div><strong>${item.nome}</strong><br>R$ ${Number(item.preco).toFixed(2)}</div>
                     <div class="controles">
                         <button class="btn-estoque" onclick="ajustarEstoque('${id}', ${item.estoque - 1})">-</button>
                         <span>${item.estoque}</span>
@@ -140,29 +116,23 @@
             });
         });
     }
-    
-    // Botão Salvar
+
     document.getElementById('btnSalvar').onclick = async () => {
         const nome = document.getElementById('nome').value;
         const preco = parseFloat(document.getElementById('preco').value);
         const estoque = parseInt(document.getElementById('estoque').value);
-    
         if (!nome || isNaN(preco)) return alert("Dados inválidos!");
-    
         await addDoc(collection(db, "produtos"), { nome, preco, estoque });
         alert("Produto cadastrado!");
     };
-    
-    // Funções Globais
+
     window.ajustarEstoque = async (id, novoValor) => {
         if (novoValor < 0) return;
         await updateDoc(doc(db, "produtos", id), { estoque: novoValor });
     };
-    
+
     window.deletarProduto = async (id) => {
-        if (confirm("Deletar esse doce?")) {
-            await deleteDoc(doc(db, "produtos", id));
-        }
+        if (confirm("Deletar esse doce?")) await deleteDoc(doc(db, "produtos", id));
     };
 </script>
 
