@@ -242,23 +242,42 @@ window.mudarAba = (tipo) => {
     document.getElementById('tab-cadastro').style.borderBottom = isLogin ? 'none' : '2px solid #d63384';
 };
 
-// Atualize suas funções de clique para pegar os IDs novos
+// --- FUNÇÃO DE LOGIN (ATUALIZADA) ---
 window.btnLogin = () => {
-    const e = document.getElementById('loginEmail').value;
-    const s = document.getElementById('loginSenha').value;
-    signInWithEmailAndPassword(auth, e, s).catch(e => alert("Erro ao entrar: " + e.message));
+    // Agora pegamos dos campos específicos da aba de login
+    const email = document.getElementById('loginEmail').value;
+    const senha = document.getElementById('loginSenha').value;
+
+    if (!email || !senha) return alert("Preencha e-mail e senha para entrar!");
+
+    signInWithEmailAndPassword(auth, email, senha)
+        .catch(e => {
+            console.error(e);
+            alert("Erro ao entrar: Verifique se os dados estão corretos.");
+        });
 };
 
+// --- FUNÇÃO DE CADASTRO (ATUALIZADA) ---
 window.btnCadastrar = () => {
+    // Agora pegamos dos campos específicos da aba de cadastro
     const nome = document.getElementById('regNome').value;
-    const e = document.getElementById('regEmail').value;
-    const s = document.getElementById('regSenha').value;
-    
-    if(!nome) return alert("Por favor, digite seu apelido para a Tia te identificar!");
-    
-    createUserWithEmailAndPassword(auth, e, s)
-        .then((res) => updateProfile(res.user, { displayName: nome }))
-        .catch(e => alert("Erro ao cadastrar: " + e.message));
+    const email = document.getElementById('regEmail').value;
+    const senha = document.getElementById('regSenha').value;
+
+    if (!nome || !email || !senha) return alert("Preencha todos os campos para o cadastro!");
+
+    createUserWithEmailAndPassword(auth, email, senha)
+        .then((res) => {
+            // Salva o apelido no perfil para a mensagem do Zap
+            return updateProfile(res.user, { displayName: nome });
+        })
+        .then(() => {
+            alert("Conta criada com sucesso! Boas compras.");
+        })
+        .catch(e => {
+            console.error(e);
+            alert("Erro ao cadastrar: " + e.message);
+        });
 };
 </script>
 </body>
