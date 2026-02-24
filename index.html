@@ -101,32 +101,92 @@
 </script>
 
 <script>
-    let carrinho = {}; let total = 0;
+    let carrinho = {}; 
+    let total = 0;
+
     function adicionar(nome, preco) {
-        if(carrinho[nome]) { carrinho[nome].qtd++; } else { carrinho[nome] = { preco, qtd: 1 }; }
-        total += preco; renderizar();
+        if(carrinho[nome]) { 
+            carrinho[nome].qtd++; 
+        } else { 
+            carrinho[nome] = { preco, qtd: 1 }; 
+        }
+        total += preco; 
+        renderizar();
     }
+
+    // --- NOVA FUNÇÃO PARA REMOVER ITEM ---
+    function remover(nome) {
+        if (carrinho[nome]) {
+            total -= carrinho[nome].preco; // Subtrai um do total
+            
+            if (carrinho[nome].qtd > 1) {
+                carrinho[nome].qtd--; // Diminui a quantidade
+            } else {
+                delete carrinho[nome]; // Remove do objeto se for o último
+            }
+            renderizar();
+        }
+    }
+
     function renderizar() {
         const c = document.getElementById('carrinho-itens');
-        c.innerHTML = Object.keys(carrinho).map(n => `<div class="item-carrinho"><span>${carrinho[n].qtd}x ${n}</span></div>`).join('');
+        const keys = Object.keys(carrinho);
+
+        if (keys.length === 0) {
+            c.innerHTML = '<p style="color: #ccc; font-style: italic;">Carrinho vazio...</p>';
+        } else {
+            c.innerHTML = keys.map(n => `
+                <div class="item-carrinho" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                    <span>${carrinho[n].qtd}x ${n}</span>
+                    <button onclick="remover('${n}')" style="background: #ff7675; color: white; border: none; border-radius: 5px; padding: 2px 8px; cursor: pointer; font-size: 0.8em;">X</button>
+                </div>
+            `).join('');
+        }
         document.getElementById('total-valor').innerText = total.toFixed(2);
     }
+
     async function enviarPedido() {
-        if(total === 0) return;
-        const pedidoId = "PED-" + Date.now();
-        const apelido = window.auth.currentUser.displayName;
+    if(total <= 0) return alert("Adicione algo ao carrinho primeiro!");
+    
+    // Gera um código curto de 4 caracteres (Ex: A1B2)
+    const pedidoId = Math.random().toString(36).substring(2, 6).toUpperCase();
+    const user = window.auth.currentUser;
+    const apelido = user ? user.displayName : "Cliente";
 
-        // Salva Pedido no Financeiro
+    // 1. SALVAR NO FIRESTORE (Financeiro da Tia)
+    try {
         await window.addDoc(window.collection(window.db, "pedidos"), {
-            pedidoId, cliente: apelido, total, status: "Pendente", data: new Date().toISOString()
+            pedidoId, 
+            cliente: apelido, 
+            total, 
+            status: "Pendente", 
+            data: new Date().toISOString()
         });
+    } catch (e) { console.error("Erro no banco:", e); }
 
-        let msg = `*Pedido #${pedidoId}*\n*Cliente:* ${apelido}\n\n`;
-        Object.keys(carrinho).forEach(n => msg += `✅ ${carrinho[n].qtd}x ${n}\n`);
-        msg += `\n*Total: R$ ${total.toFixed(2)}*`;
-        window.open(`https://wa.me/5511973019207?text=${encodeURIComponent(msg)}`);
-        carrinho = {}; total = 0; renderizar();
-    }
+    // 2. MENSAGEM TURBINADA DO WHATSAPP
+    let msg = `*NOVO PEDIDO DA TIA* 🧁✨\n`;
+    msg += `--------------------------------\n`;
+    msg += `🆔 *CÓDIGO:* #${pedidoId}\n`;
+    msg += `👤 *CLIENTE:* ${apelido}\n`;
+    msg += `--------------------------------\n\n`;
+    msg += `*ITENS DO PEDIDO:* \n`;
+    
+    Object.keys(carrinho).forEach(n => {
+        msg += `🔹 *${carrinho[n].qtd}x* ${n}\n`;
+    });
+    
+    msg += `\n--------------------------------\n`;
+    msg += `💰 *TOTAL A PAGAR:* R$ ${total.toFixed(2)}\n`;
+    msg += `--------------------------------\n`;
+    msg += `_Obrigada pela preferência!_ 😍`;
+    
+    const tel = "5511973019207"; // <-- Número da Tia
+    window.open(`https://wa.me/${tel}?text=${encodeURIComponent(msg)}`);
+    
+    // Limpa carrinho
+    carrinho = {}; total = 0; renderizar();
+}
 </script>
 </body>
 </html>
