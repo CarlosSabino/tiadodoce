@@ -201,29 +201,53 @@
     }
 
     window.enviarPedido = async () => {
-        const formaPgto = document.getElementById('forma-pagamento').value;
-        if(!formaPgto) return alert("Escolha a forma de pagamento!");
-        if(total <= 0) return alert("Carrinho vazio!");
+    const formaPgto = document.getElementById('forma-pagamento').value;
+    if(!formaPgto) return alert("Escolha a forma de pagamento!");
+    if(total <= 0) return alert("Carrinho vazio!");
 
-        const pedidoId = Math.random().toString(36).substring(2, 6).toUpperCase();
-        const user = window.auth.currentUser;
-        const apelido = user ? user.displayName : "Cliente";
+    const pedidoId = Math.random().toString(36).substring(2, 6).toUpperCase();
+    const user = window.auth.currentUser;
+    const apelido = user ? user.displayName : "Cliente";
 
-        try {
-            await window.addDoc(window.collection(window.db, "pedidos"), {
-                pedidoId, cliente: apelido, total, status: "Pendente", pagamento: formaPgto, data: new Date().toISOString()
-            });
+    try {
+        // 1. SALVAR O PEDIDO NO FIREBASE
+        await window.addDoc(window.collection(window.db, "pedidos"), {
+            pedidoId, cliente: apelido, total, status: "Pendente", 
+            pagamento: formaPgto, data: new Date().toISOString(),
+            itens: carrinho // Guardamos os itens para o painel ler depois
+        });
 
-            let msg = `*NOVO PEDIDO DA TIA* 🧁✨\n--------------------------------\n`;
-            msg += `🆔 *CÓDIGO:* #${pedidoId}\n👤 *CLIENTE:* ${apelido}\n--------------------------------\n\n`;
-            msg += `*ITENS:* \n`;
-            Object.keys(carrinho).forEach(n => msg += `🔹 *${carrinho[n].qtd}x* ${n}\n`);
-            msg += `\n--------------------------------\n💰 *TOTAL:* R$ ${total.toFixed(2)}\n💳 *PAGAMENTO:* ${formaPgto}\n--------------------------------\n_Obrigada pela preferência!_ 😍`;
+        // 2. BAIXA AUTOMÁTICA DE ESTOQUE (A Mágica aqui!)
+        const { getDocs, query, where, updateDoc, doc } = await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js");
+        
+        for (const nomeDoce in carrinho) {
+            const q = query(window.collection(window.db, "produtos"), where("nome", "==", nomeDoce));
+            const querySnapshot = await getDocs(q);
             
-            window.open(`https://wa.me/5511973019207?text=${encodeURIComponent(msg)}`);
-            carrinho = {}; total = 0; renderizar();
-        } catch (e) { alert("Erro ao salvar pedido!"); }
+            querySnapshot.forEach(async (docSnap) => {
+                const novoEstoque = docSnap.data().estoque - carrinho[nomeDoce].qtd;
+                await updateDoc(doc(window.db, "produtos", docSnap.id), {
+                    estoque: novoEstoque >= 0 ? novoEstoque : 0
+                });
+            });
+        }
+
+        // 3. MENSAGEM DO WHATSAPP
+        let msg = `*NOVO PEDIDO DA TIA* 🧁✨\n--------------------------------\n`;
+        msg += `🆔 *CÓDIGO:* #${pedidoId}\n👤 *CLIENTE:* ${apelido}\n--------------------------------\n\n`;
+        msg += `*ITENS:* \n`;
+        Object.keys(carrinho).forEach(n => msg += `🔹 *${carrinho[n].qtd}x* ${n}\n`);
+        msg += `\n--------------------------------\n💰 *TOTAL:* R$ ${total.toFixed(2)}\n💳 *PAGAMENTO:* ${formaPgto}\n--------------------------------\n_Obrigada pela preferência!_ 😍`;
+        
+        window.open(`https://wa.me/5511973019207?text=${encodeURIComponent(msg)}`);
+        
+        carrinho = {}; total = 0; renderizar();
+        alert("Pedido enviado e estoque atualizado!");
+    } catch (e) { 
+        console.error(e);
+        alert("Erro ao processar pedido!"); 
     }
+}
 </script>
 </body>
 </html>
