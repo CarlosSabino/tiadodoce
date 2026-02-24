@@ -3,57 +3,37 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Painel Admin - Tia do Doce</title>
+    <title>Painel Tia do Doce</title>
     <style>
-        :root { --doce-rosa: #ff85a1; --doce-azul: #a2d2ff; }
-        body { 
-            font-family: 'Segoe UI', sans-serif; 
-            background-image: url('fundo.png'); 
-            background-size: cover;
-            background-position: center;
-            background-attachment: fixed;
-            margin: 0; padding: 20px;
-            display: flex; align-items: center; min-height: 100vh;
-        }
-        .admin-card { 
-            background: rgba(255, 255, 255, 0.96); 
-            backdrop-filter: blur(10px);
-            max-width: 600px; margin: auto; padding: 25px; 
-            border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); 
-            border: 2px solid white;
-        }
-        h1 { color: var(--doce-rosa); text-align: center; }
-        .form-group { display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; padding: 15px; background: rgba(255, 245, 248, 0.8); border-radius: 12px; }
-        input { padding: 12px; border: 1px solid #ffc1d1; border-radius: 10px; outline: none; }
-        .btn { padding: 12px 15px; border: none; border-radius: 10px; cursor: pointer; font-weight: bold; transition: 0.3s; }
-        .btn-add { background: var(--doce-rosa); color: white; width: 100%; box-shadow: 0 4px 0 #d63384; }
-        .item-admin { display: flex; justify-content: space-between; align-items: center; padding: 15px; border-bottom: 1px dashed var(--doce-rosa); }
-        .controles { display: flex; align-items: center; gap: 10px; }
-        .btn-estoque { background: var(--doce-azul); border: none; width: 35px; height: 35px; border-radius: 8px; cursor: pointer; font-weight: bold; }
-        .btn-delete { background: #ff7675; color: white; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer; font-size: 0.8em; }
+        body { font-family: sans-serif; background: url('fundo.png') fixed center; background-size: cover; padding: 20px; margin: 0; }
+        .admin-card { background: rgba(255, 255, 255, 0.96); max-width: 600px; margin: auto; padding: 25px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
+        .financeiro-box { background: #e3f2fd; padding: 15px; border-radius: 12px; margin: 20px 0; display: flex; justify-content: space-around; }
+        .pedido-item { border-bottom: 1px solid #eee; padding: 10px 0; display: flex; justify-content: space-between; align-items: center; }
+        .btn-baixa { background: #25d366; color: white; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer; }
+        .estoque-item { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px dashed #ff85a1; }
     </style>
 </head>
 <body>
+    <div class="admin-card" id="painel" style="display:none;">
+        <h1 style="color:#ff85a1; text-align:center;">Painel da Tia 🛠️</h1>
+        
+        <h3>📦 Estoque</h3>
+        <div id="lista-estoque"></div>
 
-<div class="admin-card" id="card-principal" style="display: none;">
-    <h1>Painel da Tia 🛠️</h1>
-    <div class="form-group">
-        <h3>Novo Produto</h3>
-        <input type="text" id="nome" placeholder="Nome do Doce">
-        <input type="number" id="preco" placeholder="Preço">
-        <input type="number" id="estoque" placeholder="Estoque">
-        <button class="btn btn-add" id="btnSalvar">Adicionar Doce</button>
+        <h3>💰 Financeiro Quinzenal</h3>
+        <div class="financeiro-box">
+            <div>Pendentes: <b id="qtd-p">0</b></div>
+            <div>A Receber: <b>R$ <span id="val-p">0,00</span></b></div>
+        </div>
+        <div id="lista-financeiro"></div>
+        
+        <button onclick="location.href='index.html'" style="margin-top:20px; cursor:pointer;">Voltar</button>
     </div>
-    <hr>
-    <h3>Gestão de Estoque</h3>
-    <div id="lista-admin">Carregando produtos...</div>
-    <button onclick="location.href='index.html'" style="margin-top:20px; background:none; border:none; color:#888; text-decoration:underline; cursor:pointer;">Voltar ao Cardápio</button>
-</div>
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-    import { getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    import { getFirestore, collection, onSnapshot, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
     const firebaseConfig = {
         apiKey: "AIzaSyB6FUb-KoF6S4h-y70trrcElPb2AYuUogM",
@@ -67,81 +47,48 @@
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const db = getFirestore(app);
-    const EMAIL_ADMIN = "carlos.sabino@outlook.com.br";
+    const ADMIN = "carlos.sabino@outlook.com.br";
 
-    // 🛡️ LÓGICA DE PROTEÇÃO REFORMULADA
     onAuthStateChanged(auth, (user) => {
-        if (user) {
-            if (user.email === EMAIL_ADMIN) {
-                // Se for o admin, mostra o painel e carrega os dados
-                document.getElementById('card-principal').style.display = 'block';
-                carregarDados();
-            } else {
-                // Se estiver logado mas com e-mail errado
-                alert("Acesso Negado: Você não tem permissão de administrador.");
-                window.location.href = "index.html";
-            }
+        if(user && user.email === ADMIN) {
+            document.getElementById('painel').style.display = 'block';
+            carregarTudo();
         } else {
-            // Se não houver nenhum usuário logado após a checagem inicial
-            // Damos um pequeno delay para o Firebase processar
-            setTimeout(() => {
-                if (!auth.currentUser) {
-                    alert("Por favor, faça login como Admin no Cardápio primeiro.");
-                    window.location.href = "index.html";
-                }
-            }, 1500);
+            window.location.href = "index.html";
         }
     });
 
-    function carregarDados() {
-        onSnapshot(collection(db, "produtos"), (snapshot) => {
-            const container = document.getElementById('lista-admin');
-            container.innerHTML = "";
-            snapshot.forEach((snapshotDoc) => {
-                const item = snapshotDoc.data();
-                const id = snapshotDoc.id;
-                const div = document.createElement('div');
-                div.className = 'item-admin';
-                div.innerHTML = `
-                    <div><strong>${item.nome}</strong><br>R$ ${Number(item.preco).toFixed(2)}</div>
-                    <div class="controles">
-                        <button class="btn-estoque" onclick="ajustarEstoque('${id}', ${item.estoque - 1})">-</button>
-                        <span>${item.estoque}</span>
-                        <button class="btn-estoque" onclick="ajustarEstoque('${id}', ${item.estoque + 1})">+</button>
-                        <button class="btn-delete" onclick="deletarProduto('${id}')">Deletar</button>
-                    </div>`;
-                container.appendChild(div);
+    function carregarTudo() {
+        // Estoque
+        onSnapshot(collection(db, "produtos"), (snap) => {
+            const cont = document.getElementById('lista-estoque');
+            cont.innerHTML = "";
+            snap.forEach(sDoc => {
+                const p = sDoc.data();
+                cont.innerHTML += `<div class="estoque-item"><span>${p.nome}</span> <span>Qtd: ${p.estoque}</span></div>`;
             });
+        });
+
+        // Financeiro
+        onSnapshot(collection(db, "pedidos"), (snap) => {
+            const cont = document.getElementById('lista-financeiro');
+            let qP = 0, vP = 0;
+            cont.innerHTML = "<h4>Histórico de Pedidos:</h4>";
+            snap.forEach(sDoc => {
+                const ped = sDoc.data();
+                if(ped.status === "Pendente") { qP++; vP += ped.total; }
+                cont.innerHTML += `<div class="pedido-item">
+                    <div><b>${ped.cliente}</b> (#${ped.pedidoId})<br>R$ ${ped.total.toFixed(2)} - ${ped.status}</div>
+                    ${ped.status === "Pendente" ? `<button class="btn-baixa" onclick="baixar('${sDoc.id}')">Baixar</button>` : ''}
+                </div>`;
+            });
+            document.getElementById('qtd-p').innerText = qP;
+            document.getElementById('val-p').innerText = vP.toFixed(2);
         });
     }
 
-    document.getElementById('btnSalvar').onclick = async () => {
-        const nome = document.getElementById('nome').value;
-        const preco = parseFloat(document.getElementById('preco').value);
-        const estoque = parseInt(document.getElementById('estoque').value);
-        
-        if (!nome || isNaN(preco)) return alert("Preencha os campos corretamente!");
-        
-        try {
-            await addDoc(collection(db, "produtos"), { nome, preco, estoque });
-            alert("Doce adicionado com sucesso!");
-            document.getElementById('nome').value = "";
-            document.getElementById('preco').value = "";
-            document.getElementById('estoque').value = "";
-        } catch (e) {
-            alert("Erro ao salvar: " + e.message);
-        }
-    };
-
-    window.ajustarEstoque = async (id, novo) => {
-        if (novo < 0) return;
-        await updateDoc(doc(db, "produtos", id), { estoque: novo });
-    };
-
-    window.deletarProduto = async (id) => {
-        if (confirm("Tem certeza que deseja excluir este doce do cardápio?")) {
-            await deleteDoc(doc(db, "produtos", id));
-        }
+    window.baixar = async (id) => {
+        await updateDoc(doc(db, "pedidos", id), { status: "Pago" });
     };
 </script>
 </body>
