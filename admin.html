@@ -59,7 +59,7 @@
     const db = getFirestore(app);
     
     // --- 🛡️ TRAVA DE SEGURANÇA ---
-    const EMAIL_ADMIN = "emaildaamiga@gmail.com"; // <-- COLOQUE O E-MAIL DELA AQUI
+    const EMAIL_ADMIN = "carlos.sabino@outlook.com.br"; // <-- COLOQUE O E-MAIL DELA AQUI
     
     onAuthStateChanged(auth, (user) => {
         if (!user || user.email !== EMAIL_ADMIN) {
