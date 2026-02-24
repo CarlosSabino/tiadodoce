@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tia do Doce - Pedidos</title>
+    <style>
+        :root { --doce-rosa: #ff85a1; --doce-azul: #a2d2ff; --doce-creme: #fef9e7; }
+        
+        body { 
+            margin: 0; font-family: 'Comic Sans MS', cursive, sans-serif;
+            background-color: var(--doce-rosa);
+            background-image: url('https://img.freepik.com/vetores-gratis/padrao-sem-emenda-de-doces-doces_23-2148216110.jpg');
+            background-size: 350px;
+            display: flex; justify-content: center; align-items: center; min-height: 100vh;
+        }
+
+        .glass-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 25px;
+            padding: 25px;
+            width: 90%; max-width: 450px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+            border: 2px solid white;
+            margin: 20px auto;
+        }
+
+        h1 { color: #d63384; text-align: center; font-size: 2.2em; margin-bottom: 10px; }
+        input { width: calc(100% - 24px); padding: 12px; margin: 8px 0; border-radius: 12px; border: 1.5px solid #ffc1d1; outline: none; }
+        
+        .btn { 
+            width: 100%; padding: 14px; border: none; border-radius: 12px; 
+            font-weight: bold; cursor: pointer; margin-top: 10px; transition: 0.2s;
+        }
+        .btn:active { transform: scale(0.98); }
+        .btn-principal { background: var(--doce-rosa); color: white; box-shadow: 0 4px 0 #d63384; }
+        .btn-whatsapp { background: #25d366; color: white; font-size: 1.1em; margin-top: 20px; }
+
+        .produto { 
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 12px; border-bottom: 1px dashed var(--doce-rosa);
+        }
+        .btn-add { background: var(--doce-azul); border: none; border-radius: 8px; padding: 5px 12px; cursor: pointer; font-size: 1.2em; }
+
+        #sessao-cardapio { display: none; }
+        .item-carrinho { display: flex; justify-content: space-between; font-size: 0.9em; margin-bottom: 5px; color: #555; }
+    </style>
+</head>
+<body>
+
+    <div id="sessao-auth" class="glass-card">
+        <h1>Tia do Doce 🧁</h1>
+        <p style="text-align:center; color: #888;">Entre para ver as delícias de hoje!</p>
+        <input type="email" id="email" placeholder="Seu e-mail">
+        <input type="password" id="senha" placeholder="Sua senha">
+        <button class="btn btn-principal" id="btnLogin">Entrar</button>
+        <button class="btn" style="background: transparent; color: #d63384;" id="btnCadastrar">Ainda não tenho conta (Cadastrar)</button>
+    </div>
+
+    <div id="sessao-cardapio" class="glass-card">
+        <h1>Doces da Tia ✨</h1>
+        
+        <div id="lista-produtos">
+            <div class="produto">
+                <div><strong>Brigadeiro Tradicional</strong><br>R$ 5,00</div>
+                <button class="btn-add" onclick="adicionar('Brigadeiro Tradicional', 5)">+</button>
+            </div>
+            <div class="produto">
+                <div><strong>Donut Recheado</strong><br>R$ 12,00</div>
+                <button class="btn-add" onclick="adicionar('Donut Recheado', 12)">+</button>
+            </div>
+            <div class="produto">
+                <div><strong>Bolo de Pote</strong><br>R$ 15,00</div>
+                <button class="btn-add" onclick="adicionar('Bolo de Pote', 15)">+</button>
+            </div>
+            <div class="produto">
+                <div><strong>Copo da Felicidade</strong><br>R$ 18,00</div>
+                <button class="btn-add" onclick="adicionar('Copo da Felicidade', 18)">+</button>
+            </div>
+        </div>
+
+        <div style="margin-top:25px; background: #fff; padding: 15px; border-radius: 15px; border: 1px solid #eee;">
+            <h3 style="margin-top:0; color: #d63384;">🛍️ Seu Carrinho</h3>
+            <div id="carrinho-itens">
+                <p style="color: #ccc; font-style: italic;">Carrinho vazio...</p>
+            </div>
+            <p style="font-size: 1.2em; border-top: 1px solid #eee; padding-top: 10px;">
+                <strong>Total: R$ <span id="total-valor">0,00</span></strong>
+            </p>
+            <button class="btn btn-whatsapp" onclick="enviarPedido()">Finalizar via WhatsApp 🚀</button>
+            <button class="btn" onclick="logout()" style="background:none; color:#aaa; font-size:0.8em; text-decoration: underline;">Trocar de conta</button>
+        </div>
+    </div>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+
+    const firebaseConfig = {
+        apiKey: "AIzaSyB6FUb-KoF6S4h-y70trrcElPb2AYuUogM",
+        authDomain: "tia-do-doce.firebaseapp.com",
+        projectId: "tia-do-doce",
+        storageBucket: "tia-do-doce.firebasestorage.app",
+        messagingSenderId: "766286783719",
+        appId: "1:766286783719:web:f49c11f7190c88cc44ae42"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+
+    document.getElementById('btnLogin').onclick = () => {
+        const email = document.getElementById('email').value;
+        const senha = document.getElementById('senha').value;
+        signInWithEmailAndPassword(auth, email, senha).catch(err => alert("Erro ao entrar: " + err.message));
+    };
+
+    document.getElementById('btnCadastrar').onclick = () => {
+        const email = document.getElementById('email').value;
+        const senha = document.getElementById('senha').value;
+        createUserWithEmailAndPassword(auth, email, senha).catch(err => alert("Erro ao cadastrar: " + err.message));
+    };
+
+    window.logout = () => signOut(auth);
+
+    onAuthStateChanged(auth, (user) => {
+        const authSec = document.getElementById('sessao-auth');
+        const cardapioSec = document.getElementById('sessao-cardapio');
+        if (user) {
+            authSec.style.display = 'none';
+            cardapioSec.style.display = 'block';
+        } else {
+            authSec.style.display = 'block';
+            cardapioSec.style.display = 'none';
+        }
+    });
+</script>
+
+<script>
+    let carrinho = {}; // Agora usamos um objeto para agrupar quantidades
+    let total = 0;
+
+    function adicionar(nome, preco) {
+        if (carrinho[nome]) {
+            carrinho[nome].qtd += 1;
+        } else {
+            carrinho[nome] = { preco, qtd: 1 };
+        }
+        total += preco;
+        renderizarCarrinho();
+    }
+
+    function renderizarCarrinho() {
+        const lista = document.getElementById('carrinho-itens');
+        const keys = Object.keys(carrinho);
+        
+        if (keys.length === 0) {
+            lista.innerHTML = '<p style="color: #ccc; font-style: italic;">Carrinho vazio...</p>';
+        } else {
+            lista.innerHTML = keys.map(nome => `
+                <div class="item-carrinho">
+                    <span>${carrinho[nome].qtd}x ${nome}</span>
+                    <span>R$ ${(carrinho[nome].preco * carrinho[nome].qtd).toFixed(2)}</span>
+                </div>
+            `).join('');
+        }
+        document.getElementById('total-valor').innerText = total.toFixed(2);
+    }
+
+    function enviarPedido() {
+        const keys = Object.keys(carrinho);
+        if (keys.length === 0) return alert("Adicione algo ao carrinho primeiro!");
+        
+        let msg = `*Novo Pedido - Tia do Doce* 🧁\n\n`;
+        keys.forEach(nome => {
+            msg += `• *${carrinho[nome].qtd}x* ${nome}\n`;
+        });
+        msg += `\n💰 *Total: R$ ${total.toFixed(2)}*`;
+        
+        const tel = "5511999999999"; // Coloque o WhatsApp da Tia aqui!
+        window.open(`https://wa.me/${tel}?text=${encodeURIComponent(msg)}`);
+    }
+</script>
+
+</body>
+</html>
