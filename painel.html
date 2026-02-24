@@ -80,24 +80,37 @@
 
     function iniciarEscutas() {
         // Atualiza Estoque em tempo real
-        onSnapshot(collection(db, "produtos"), (snap) => {
-            const cont = document.getElementById('lista-estoque');
-            cont.innerHTML = "";
-            snap.forEach(d => {
-                const item = d.data();
-                const id = d.id;
-                cont.innerHTML += `
-                    <div class="item-gestao">
-                        <span><b>${item.nome}</b> (R$ ${item.preco.toFixed(2)})</span>
-                        <div class="controles">
-                            <button class="btn-mini" style="background:#a2d2ff" onclick="ajustarEstoque('${id}', ${item.estoque - 1})">-</button>
-                            <span>${item.estoque}</span>
-                            <button class="btn-mini" style="background:#a2d2ff" onclick="ajustarEstoque('${id}', ${item.estoque + 1})">+</button>
-                            <button class="btn-mini" style="background:#ff7675; color:white;" onclick="removerDoce('${id}')">Excluir</button>
-                        </div>
-                    </div>`;
-            });
+        // Financeiro (No painel.html)
+    onSnapshot(collection(db, "pedidos"), (snap) => {
+        const cont = document.getElementById('lista-financeiro');
+        let qP = 0, vP = 0;
+        cont.innerHTML = "<h4>Histórico de Pedidos:</h4>";
+        
+        snap.forEach(sDoc => {
+            const ped = sDoc.data();
+            if(ped.status === "Pendente") { qP++; vP += ped.total; }
+            
+            // Formatar a lista de itens do pedido
+            let listaItens = "";
+            if(ped.itens) {
+                Object.keys(ped.itens).forEach(nome => {
+                    listaItens += `<small>• ${ped.itens[nome].qtd}x ${nome}</small><br>`;
+                });
+            }
+    
+            cont.innerHTML += `<div class="pedido-item" style="border-left: 4px solid ${ped.status === 'Pendente' ? '#ff85a1' : '#25d366'}; padding-left: 10px; margin-bottom: 15px;">
+                <div>
+                    <b>${ped.cliente}</b> (#${ped.pedidoId})<br>
+                    ${listaItens}
+                    <span style="font-size: 0.8em; color: #666;">Pgto: ${ped.pagamento || 'N/A'}</span><br>
+                    R$ ${ped.total.toFixed(2)} - <strong>${ped.status}</strong>
+                </div>
+                ${ped.status === "Pendente" ? `<button class="btn-baixa" onclick="baixar('${sDoc.id}')">Dar Baixa</button>` : ''}
+            </div>`;
         });
+        document.getElementById('qtd-p').innerText = qP;
+        document.getElementById('val-p').innerText = vP.toFixed(2);
+    });
 
         // Atualiza Financeiro em tempo real
         onSnapshot(collection(db, "pedidos"), (snap) => {
