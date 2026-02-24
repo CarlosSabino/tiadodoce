@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tia do Doce - Cardápio</title>
     <style>
-        :root { --doce-rosa: #ff85a1; --doce-azul: #a2d2ff; --doce-verde: #25d366; --doce-cancel: #ff7675; }
+        :root { --doce-rosa: #ff85a1; --doce-azul: #a2d2ff; --doce-verde: #25d366; --doce-laranja: #e67e22; --doce-cancel: #ff7675; }
         body { margin: 0; font-family: 'Comic Sans MS', cursive, sans-serif; background: url('fundo.png') fixed center; background-size: cover; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
         .glass-card { background: rgba(255, 255, 255, 0.96); backdrop-filter: blur(10px); border-radius: 25px; padding: 25px; width: 90%; max-width: 450px; box-shadow: 0 10px 40px rgba(0,0,0,0.2); border: 2px solid white; margin: 20px auto; }
         h1, h3 { color: #d63384; text-align: center; margin-bottom: 15px; }
@@ -97,9 +97,7 @@
         const e = document.getElementById('regEmail').value;
         const s = document.getElementById('regSenha').value;
         if(!nome) return alert("Diga seu apelido!");
-        createUserWithEmailAndPassword(auth, e, s)
-            .then((res) => updateProfile(res.user, { displayName: nome }))
-            .catch(err => alert("Erro: " + err.message));
+        createUserWithEmailAndPassword(auth, e, s).then((res) => updateProfile(res.user, { displayName: nome })).catch(err => alert("Erro: " + err.message));
     };
 
     window.logout = () => signOut(auth);
@@ -143,13 +141,20 @@
             container.innerHTML = snapshot.empty ? '<p style="text-align:center; color:#aaa; font-size:0.8em;">Nenhum pedido ainda.</p>' : "";
             snapshot.forEach((doc) => {
                 const ped = doc.data();
-                const cor = ped.status === "Pendente" ? "#ff85a1" : (ped.status === "Cancelado" ? "#ff7675" : "#25d366");
+                const cor = ped.status === "Cancelado" ? "var(--doce-cancel)" : (ped.entregue ? "var(--doce-azul)" : "var(--doce-rosa)");
+                const statusPgto = ped.status === "Pago" ? "✅ PAGO" : "⚠️ AGUARDANDO PAGAMENTO";
+                
                 let itensH = "";
                 if(ped.itens) Object.keys(ped.itens).forEach(n => itensH += `<div style="font-size:0.8em;color:#555">• ${ped.itens[n].qtd}x ${n}</div>`);
+                
                 container.innerHTML += `
                     <div class="pedido-mini-card" style="border-left: 5px solid ${cor}">
-                        <div style="display:flex; justify-content:space-between;"><strong>#${ped.pedidoId}</strong> <span style="color:${cor};font-size:0.7em;font-weight:bold;">${ped.status.toUpperCase()}</span></div>
+                        <div style="display:flex; justify-content:space-between; align-items:center;">
+                            <strong>#${ped.pedidoId}</strong> 
+                            <span style="color:${cor};font-size:0.7em;font-weight:bold;">${ped.entregue ? 'ENTREGUE' : ped.status.toUpperCase()}</span>
+                        </div>
                         <div style="margin:5px 0;">${itensH}</div>
+                        <div style="font-size: 0.7em; font-weight: bold; color: ${ped.status === "Pago" ? "#25d366" : "#e67e22"}; margin-bottom: 5px;">${statusPgto}</div>
                         <div style="display:flex; justify-content:space-between; font-size:0.85em; margin-top:5px; border-top:1px dashed #eee; padding-top:5px;">
                             <span>${new Date(ped.data).toLocaleDateString()}</span> <strong>R$ ${ped.total.toFixed(2)}</strong>
                         </div>
@@ -199,7 +204,7 @@
         const u = window.auth.currentUser;
         try {
             await window.addDoc(window.collection(window.db, "pedidos"), {
-                pedidoId: pid, cliente: u.displayName, emailCliente: u.email, total, status: "Pendente", pagamento: pg, data: new Date().toISOString(), itens: carrinho
+                pedidoId: pid, cliente: u.displayName, emailCliente: u.email, total, status: "Pendente", pagamento: pg, data: new Date().toISOString(), itens: carrinho, entregue: false
             });
             for (const n in carrinho) {
                 const q = window.query(window.collection(window.db, "produtos"), window.where("nome", "==", n));
@@ -210,7 +215,7 @@
             Object.keys(carrinho).forEach(n => m += `🔹 *${carrinho[n].qtd}x* ${n}\n`);
             m += `\n💰 *TOTAL:* R$ ${total.toFixed(2)}\n💳 *PGTO:* ${pg}\n--------------------------------\n_Enviando comprovante..._ 😍`;
             alert("🎉 Pedido Confirmado! Abrindo WhatsApp...");
-            window.open(`https://wa.me/5511984756872?text=${encodeURIComponent(m)}`);
+            window.open(`https://wa.me/5511973019207?text=${encodeURIComponent(m)}`);
             carrinho = {}; total = 0; renderizar();
         } catch (e) { alert("Erro ao processar!"); }
     }
