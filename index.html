@@ -243,55 +243,44 @@ onAuthStateChanged(auth, (user) => {
     carrinho = {}; total = 0; renderizar();
     }
 
-    // Função para alternar entre Login e Cadastro
+    // --- FUNÇÃO PARA ALTERNAR ABAS ---
 window.mudarAba = (tipo) => {
     const isLogin = tipo === 'login';
     document.getElementById('form-login').style.display = isLogin ? 'block' : 'none';
     document.getElementById('form-cadastro').style.display = isLogin ? 'none' : 'block';
     
-    // Estilo visual das abas
     document.getElementById('tab-login').style.color = isLogin ? '#d63384' : '#aaa';
     document.getElementById('tab-login').style.borderBottom = isLogin ? '2px solid #d63384' : 'none';
     document.getElementById('tab-cadastro').style.color = isLogin ? '#aaa' : '#d63384';
     document.getElementById('tab-cadastro').style.borderBottom = isLogin ? 'none' : '2px solid #d63384';
 };
 
-// --- FUNÇÃO DE LOGIN (ATUALIZADA) ---
+// --- FUNÇÃO DE LOGIN ---
 window.btnLogin = () => {
-    // Agora pegamos dos campos específicos da aba de login
     const email = document.getElementById('loginEmail').value;
     const senha = document.getElementById('loginSenha').value;
 
-    if (!email || !senha) return alert("Preencha e-mail e senha para entrar!");
+    if (!email || !senha) return alert("Por favor, preencha e-mail e senha!");
 
     signInWithEmailAndPassword(auth, email, senha)
-        .catch(e => {
-            console.error(e);
-            alert("Erro ao entrar: Verifique se os dados estão corretos.");
-        });
+        .catch(e => alert("Erro ao entrar: Verifique se o e-mail e senha estão corretos."));
 };
 
-// --- FUNÇÃO DE CADASTRO (ATUALIZADA) ---
+// --- FUNÇÃO DE CADASTRO ---
 window.btnCadastrar = () => {
-    // Agora pegamos dos campos específicos da aba de cadastro
     const nome = document.getElementById('regNome').value;
     const email = document.getElementById('regEmail').value;
     const senha = document.getElementById('regSenha').value;
 
-    if (!nome || !email || !senha) return alert("Preencha todos os campos para o cadastro!");
+    if (!nome || !email || !senha) return alert("Preencha todos os campos!");
 
     createUserWithEmailAndPassword(auth, email, senha)
         .then((res) => {
-            // Salva o apelido no perfil para a mensagem do Zap
+            // Salva o apelido para sair no WhatsApp do pedido
             return updateProfile(res.user, { displayName: nome });
         })
-        .then(() => {
-            alert("Conta criada com sucesso! Boas compras.");
-        })
-        .catch(e => {
-            console.error(e);
-            alert("Erro ao cadastrar: " + e.message);
-        });
+        .then(() => alert("Cadastro realizado com sucesso!"))
+        .catch(e => alert("Erro ao cadastrar: " + e.message));
 };
 </script>
 </body>
