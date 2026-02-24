@@ -20,13 +20,27 @@
 </head>
 <body>
 
-    <div id="sessao-auth" class="glass-card">
+   <div id="sessao-auth" class="glass-card">
     <h1>Tia do Doce 🧁</h1>
     
     <div style="display: flex; justify-content: space-around; margin-bottom: 20px; border-bottom: 2px solid #ffdeeb;">
-        <button id="tab-login" onclick="mudarAba('login')" style="flex:1; padding: 10px; border:none; background:none; cursor:pointer; font-weight:bold; color:#d63384;">Entrar</button>
+        <button id="tab-login" onclick="mudarAba('login')" style="flex:1; padding: 10px; border:none; background:none; cursor:pointer; font-weight:bold; color:#d63384; border-bottom: 2px solid #d63384;">Entrar</button>
         <button id="tab-cadastro" onclick="mudarAba('cadastro')" style="flex:1; padding: 10px; border:none; background:none; cursor:pointer; color:#aaa;">Cadastrar</button>
     </div>
+
+    <div id="form-login">
+        <input type="email" id="loginEmail" placeholder="Seu e-mail">
+        <input type="password" id="loginSenha" placeholder="Sua senha">
+        <button class="btn btn-principal" onclick="btnLogin()">Entrar no Cardápio</button>
+    </div>
+
+    <div id="form-cadastro" style="display:none;">
+        <input type="text" id="regNome" placeholder="Seu Apelido (Ex: Carlão)">
+        <input type="email" id="regEmail" placeholder="Seu melhor e-mail">
+        <input type="password" id="regSenha" placeholder="Crie uma senha">
+        <button class="btn btn-principal" onclick="btnCadastrar()">Criar Minha Conta</button>
+    </div>
+</div>
 
     <div id="form-login">
         <input type="email" id="loginEmail" placeholder="Seu e-mail">
