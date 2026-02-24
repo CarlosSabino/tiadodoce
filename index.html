@@ -3,99 +3,81 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tia do Doce - Pedidos</title>
+    <title>Tia do Doce - Cardápio Digital</title>
     <style>
         :root { --doce-rosa: #ff85a1; --doce-azul: #a2d2ff; --doce-creme: #fef9e7; }
         
         body { 
             margin: 0; font-family: 'Comic Sans MS', cursive, sans-serif;
             background-color: var(--doce-rosa);
-            background-image: url('fundo.png');
-            background-size: cover;
+            background-image: url('https://img.freepik.com/vetores-premium/padrao-sem-emenda-de-doces-kawaii_24908-61521.jpg');
+            background-size: 400px;
             display: flex; justify-content: center; align-items: center; min-height: 100vh;
         }
 
         .glass-card {
-            background: rgba(255, 255, 255, 0.95);
+            background: rgba(255, 255, 255, 0.96);
             backdrop-filter: blur(10px);
             border-radius: 25px;
             padding: 25px;
             width: 90%; max-width: 450px;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
             border: 2px solid white;
             margin: 20px auto;
         }
 
-        h1 { color: #d63384; text-align: center; font-size: 2.2em; margin-bottom: 10px; }
-        input { width: calc(100% - 24px); padding: 12px; margin: 8px 0; border-radius: 12px; border: 1.5px solid #ffc1d1; outline: none; }
+        h1 { color: #d63384; text-align: center; font-size: 2.2em; margin-bottom: 10px; text-shadow: 1px 1px #fff; }
+        input { width: 100%; padding: 12px; margin: 8px 0; border-radius: 12px; border: 1.5px solid #ffc1d1; outline: none; box-sizing: border-box; }
         
-        .btn { 
-            width: 100%; padding: 14px; border: none; border-radius: 12px; 
-            font-weight: bold; cursor: pointer; margin-top: 10px; transition: 0.2s;
-        }
-        .btn:active { transform: scale(0.98); }
+        .btn { width: 100%; padding: 14px; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; margin-top: 10px; transition: 0.2s; }
         .btn-principal { background: var(--doce-rosa); color: white; box-shadow: 0 4px 0 #d63384; }
-        .btn-whatsapp { background: #25d366; color: white; font-size: 1.1em; margin-top: 20px; }
+        .btn-whatsapp { background: #25d366; color: white; font-size: 1.1em; margin-top: 20px; box-shadow: 0 4px 0 #128c7e; }
 
-        .produto { 
-            display: flex; justify-content: space-between; align-items: center;
-            padding: 12px; border-bottom: 1px dashed var(--doce-rosa);
-        }
+        .produto { display: flex; justify-content: space-between; align-items: center; padding: 12px; border-bottom: 1px dashed var(--doce-rosa); }
         .btn-add { background: var(--doce-azul); border: none; border-radius: 8px; padding: 5px 12px; cursor: pointer; font-size: 1.2em; }
+        .btn-add:disabled { opacity: 0.3; cursor: not-allowed; }
 
         #sessao-cardapio { display: none; }
-        .item-carrinho { display: flex; justify-content: space-between; font-size: 0.9em; margin-bottom: 5px; color: #555; }
+        .item-carrinho { display: flex; justify-content: space-between; font-size: 0.95em; margin-bottom: 8px; color: #444; border-left: 3px solid var(--doce-rosa); padding-left: 8px; }
+        
+        .status-estoque { font-size: 0.8em; font-weight: bold; }
     </style>
 </head>
 <body>
 
     <div id="sessao-auth" class="glass-card">
         <h1>Tia do Doce 🧁</h1>
-        <p style="text-align:center; color: #888;">Entre para ver as delícias de hoje!</p>
+        <p style="text-align:center; color: #666;">Faça login para ver as delícias!</p>
         <input type="email" id="email" placeholder="Seu e-mail">
         <input type="password" id="senha" placeholder="Sua senha">
         <button class="btn btn-principal" id="btnLogin">Entrar</button>
-        <button class="btn" style="background: transparent; color: #d63384;" id="btnCadastrar">Ainda não tenho conta (Cadastrar)</button>
+        <button class="btn" style="background: transparent; color: #d63384; border: 1px solid #d63384;" id="btnCadastrar">Criar Nova Conta</button>
     </div>
 
     <div id="sessao-cardapio" class="glass-card">
-        <h1>Doces da Tia ✨</h1>
+        <h1>Cardápio ✨</h1>
         
         <div id="lista-produtos">
-            <div class="produto">
-                <div><strong>Brigadeiro Tradicional</strong><br>R$ 5,00</div>
-                <button class="btn-add" onclick="adicionar('Brigadeiro Tradicional', 5)">+</button>
-            </div>
-            <div class="produto">
-                <div><strong>Donut Recheado</strong><br>R$ 12,00</div>
-                <button class="btn-add" onclick="adicionar('Donut Recheado', 12)">+</button>
-            </div>
-            <div class="produto">
-                <div><strong>Bolo de Pote</strong><br>R$ 15,00</div>
-                <button class="btn-add" onclick="adicionar('Bolo de Pote', 15)">+</button>
-            </div>
-            <div class="produto">
-                <div><strong>Copo da Felicidade</strong><br>R$ 18,00</div>
-                <button class="btn-add" onclick="adicionar('Copo da Felicidade', 18)">+</button>
-            </div>
+            <p style="text-align:center;">Carregando doces...</p>
         </div>
 
-        <div style="margin-top:25px; background: #fff; padding: 15px; border-radius: 15px; border: 1px solid #eee;">
-            <h3 style="margin-top:0; color: #d63384;">🛍️ Seu Carrinho</h3>
+        <div style="margin-top:25px; background: #fff; padding: 15px; border-radius: 15px; border: 1px solid #ffdeeb;">
+            <h3 style="margin-top:0; color: #d63384;">🛒 Seu Carrinho</h3>
             <div id="carrinho-itens">
                 <p style="color: #ccc; font-style: italic;">Carrinho vazio...</p>
             </div>
-            <p style="font-size: 1.2em; border-top: 1px solid #eee; padding-top: 10px;">
+            <p style="font-size: 1.2em; border-top: 2px solid var(--doce-creme); padding-top: 10px; margin-top: 10px;">
                 <strong>Total: R$ <span id="total-valor">0,00</span></strong>
             </p>
-            <button class="btn btn-whatsapp" onclick="enviarPedido()">Finalizar via WhatsApp 🚀</button>
-            <button class="btn" onclick="logout()" style="background:none; color:#aaa; font-size:0.8em; text-decoration: underline;">Trocar de conta</button>
+            <button class="btn btn-whatsapp" onclick="enviarPedido()">Finalizar no WhatsApp 🚀</button>
+            <button class="btn" onclick="logout()" style="background:none; color:#aaa; font-size:0.8em; text-decoration: underline; margin-top: 15px;">Sair / Trocar Conta</button>
         </div>
     </div>
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+    import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
     const firebaseConfig = {
         apiKey: "AIzaSyB6FUb-KoF6S4h-y70trrcElPb2AYuUogM",
@@ -108,36 +90,65 @@
 
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
+    const db = getFirestore(app);
 
+    // FUNÇÃO PARA BUSCAR PRODUTOS NO FIRESTORE
+    async function carregarProdutos() {
+        const container = document.getElementById('lista-produtos');
+        try {
+            const querySnapshot = await getDocs(collection(db, "produtos"));
+            container.innerHTML = "";
+            
+            if (querySnapshot.empty) {
+                container.innerHTML = "<p>Nenhum doce cadastrado no banco.</p>";
+                return;
+            }
+
+            querySnapshot.forEach((doc) => {
+                const item = doc.data();
+                const isDisponivel = item.estoque > 0;
+                container.innerHTML += `
+                    <div class="produto">
+                        <div>
+                            <strong>${item.nome}</strong><br>
+                            R$ ${Number(item.preco).toFixed(2)}<br>
+                            <span class="status-estoque" style="color: ${isDisponivel ? '#25d366' : '#ff4d4d'}">
+                                ${isDisponivel ? 'Disponível' : 'Esgotado'}
+                            </span>
+                        </div>
+                        <button class="btn-add" onclick="adicionar('${item.nome}', ${item.preco})" ${isDisponivel ? '' : 'disabled'}>+</button>
+                    </div>
+                `;
+            });
+        } catch (e) {
+            container.innerHTML = "<p>Erro ao carregar produtos.</p>";
+        }
+    }
+
+    // AUTH
     document.getElementById('btnLogin').onclick = () => {
-        const email = document.getElementById('email').value;
-        const senha = document.getElementById('senha').value;
-        signInWithEmailAndPassword(auth, email, senha).catch(err => alert("Erro ao entrar: " + err.message));
+        const e = document.getElementById('email').value;
+        const s = document.getElementById('senha').value;
+        signInWithEmailAndPassword(auth, e, s).catch(err => alert("Erro: " + err.message));
     };
 
     document.getElementById('btnCadastrar').onclick = () => {
-        const email = document.getElementById('email').value;
-        const senha = document.getElementById('senha').value;
-        createUserWithEmailAndPassword(auth, email, senha).catch(err => alert("Erro ao cadastrar: " + err.message));
+        const e = document.getElementById('email').value;
+        const s = document.getElementById('senha').value;
+        createUserWithEmailAndPassword(auth, e, s).then(() => alert("Bem-vindo(a)!")).catch(err => alert("Erro: " + err.message));
     };
 
     window.logout = () => signOut(auth);
 
     onAuthStateChanged(auth, (user) => {
-        const authSec = document.getElementById('sessao-auth');
-        const cardapioSec = document.getElementById('sessao-cardapio');
-        if (user) {
-            authSec.style.display = 'none';
-            cardapioSec.style.display = 'block';
-        } else {
-            authSec.style.display = 'block';
-            cardapioSec.style.display = 'none';
-        }
+        document.getElementById('sessao-auth').style.display = user ? 'none' : 'block';
+        document.getElementById('sessao-cardapio').style.display = user ? 'block' : 'none';
+        if(user) carregarProdutos();
     });
 </script>
 
 <script>
-    let carrinho = {}; // Agora usamos um objeto para agrupar quantidades
+    let carrinho = {};
     let total = 0;
 
     function adicionar(nome, preco) {
@@ -153,13 +164,12 @@
     function renderizarCarrinho() {
         const lista = document.getElementById('carrinho-itens');
         const keys = Object.keys(carrinho);
-        
         if (keys.length === 0) {
             lista.innerHTML = '<p style="color: #ccc; font-style: italic;">Carrinho vazio...</p>';
         } else {
             lista.innerHTML = keys.map(nome => `
                 <div class="item-carrinho">
-                    <span>${carrinho[nome].qtd}x ${nome}</span>
+                    <span><strong>${carrinho[nome].qtd}x</strong> ${nome}</span>
                     <span>R$ ${(carrinho[nome].preco * carrinho[nome].qtd).toFixed(2)}</span>
                 </div>
             `).join('');
@@ -169,16 +179,19 @@
 
     function enviarPedido() {
         const keys = Object.keys(carrinho);
-        if (keys.length === 0) return alert("Adicione algo ao carrinho primeiro!");
+        if (keys.length === 0) return alert("Carrinho vazio!");
         
         let msg = `*Novo Pedido - Tia do Doce* 🧁\n\n`;
         keys.forEach(nome => {
-            msg += `• *${carrinho[nome].qtd}x* ${nome}\n`;
+            msg += `✅ *${carrinho[nome].qtd}x* ${nome}\n`;
         });
-        msg += `\n💰 *Total: R$ ${total.toFixed(2)}*`;
+        msg += `\n*Total: R$ ${total.toFixed(2)}*`;
         
-        const tel = "5511999999999"; // Coloque o WhatsApp da Tia aqui!
+        const tel = "5511999999999"; // <-- TROQUE PELO WHATSAPP DELA
         window.open(`https://wa.me/${tel}?text=${encodeURIComponent(msg)}`);
+        
+        carrinho = {}; total = 0;
+        renderizarCarrinho();
     }
 </script>
 
