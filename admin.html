@@ -42,8 +42,9 @@
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getFirestore, collection, addDoc, getDocs, updateDoc, deleteDoc, doc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+    import { getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    
     const firebaseConfig = {
         apiKey: "AIzaSyB6FUb-KoF6S4h-y70trrcElPb2AYuUogM",
         authDomain: "tia-do-doce.firebaseapp.com",
@@ -52,61 +53,70 @@
         messagingSenderId: "766286783719",
         appId: "1:766286783719:web:f49c11f7190c88cc44ae42"
     };
-
+    
     const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
     const db = getFirestore(app);
-
-    // --- SALVAR NOVO PRODUTO ---
+    
+    // --- 🛡️ TRAVA DE SEGURANÇA ---
+    const EMAIL_ADMIN = "emaildaamiga@gmail.com"; // <-- COLOQUE O E-MAIL DELA AQUI
+    
+    onAuthStateChanged(auth, (user) => {
+        if (!user || user.email !== EMAIL_ADMIN) {
+            alert("Acesso negado! Apenas a Tia do Doce pode entrar aqui. 🛑");
+            window.location.href = "index.html"; // Redireciona para o cardápio
+        } else {
+            carregarPainel(); // Se for ela, carrega as funções
+        }
+    });
+    
+    function carregarPainel() {
+        // --- ESCUTAR MUDANÇAS EM TEMPO REAL ---
+        onSnapshot(collection(db, "produtos"), (snapshot) => {
+            const container = document.getElementById('lista-admin');
+            container.innerHTML = "";
+            snapshot.forEach((snapshotDoc) => {
+                const item = snapshotDoc.data();
+                const id = snapshotDoc.id;
+                const div = document.createElement('div');
+                div.className = 'item-admin';
+                div.innerHTML = `
+                    <div>
+                        <strong>${item.nome}</strong><br>
+                        R$ ${Number(item.preco).toFixed(2)}
+                    </div>
+                    <div class="controles">
+                        <button class="btn-estoque" onclick="ajustarEstoque('${id}', ${item.estoque - 1})">-</button>
+                        <span>${item.estoque}</span>
+                        <button class="btn-estoque" onclick="ajustarEstoque('${id}', ${item.estoque + 1})">+</button>
+                        <button class="btn btn-delete" onclick="deletarProduto('${id}')">Excluir</button>
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+        });
+    }
+    
+    // Botão Salvar
     document.getElementById('btnSalvar').onclick = async () => {
         const nome = document.getElementById('nome').value;
         const preco = parseFloat(document.getElementById('preco').value);
         const estoque = parseInt(document.getElementById('estoque').value);
-
-        if (!nome || isNaN(preco)) return alert("Preencha os dados corretamente!");
-
-        try {
-            await addDoc(collection(db, "produtos"), { nome, preco, estoque });
-            alert("Doce adicionado!");
-            document.querySelectorAll('input').forEach(i => i.value = "");
-        } catch (e) { alert("Erro ao salvar: " + e.message); }
+    
+        if (!nome || isNaN(preco)) return alert("Dados inválidos!");
+    
+        await addDoc(collection(db, "produtos"), { nome, preco, estoque });
+        alert("Produto cadastrado!");
     };
-
-    // --- ESCUTAR MUDANÇAS EM TEMPO REAL (onSnapshot) ---
-    onSnapshot(collection(db, "produtos"), (snapshot) => {
-        const container = document.getElementById('lista-admin');
-        container.innerHTML = "";
-        
-        snapshot.forEach((snapshotDoc) => {
-            const item = snapshotDoc.data();
-            const id = snapshotDoc.id;
-
-            const div = document.createElement('div');
-            div.className = 'item-admin';
-            div.innerHTML = `
-                <div>
-                    <strong>${item.nome}</strong><br>
-                    R$ ${item.preco.toFixed(2)}
-                </div>
-                <div class="controles">
-                    <button class="btn-estoque" onclick="ajustarEstoque('${id}', ${item.estoque - 1})">-</button>
-                    <span>${item.estoque}</span>
-                    <button class="btn-estoque" onclick="ajustarEstoque('${id}', ${item.estoque + 1})">+</button>
-                    <button class="btn btn-delete" onclick="deletarProduto('${id}')">Excluir</button>
-                </div>
-            `;
-            container.appendChild(div);
-        });
-    });
-
-    // --- FUNÇÕES GLOBAIS ---
+    
+    // Funções Globais
     window.ajustarEstoque = async (id, novoValor) => {
         if (novoValor < 0) return;
-        const docRef = doc(db, "produtos", id);
-        await updateDoc(docRef, { estoque: novoValor });
+        await updateDoc(doc(db, "produtos", id), { estoque: novoValor });
     };
-
+    
     window.deletarProduto = async (id) => {
-        if (confirm("Tem certeza que deseja excluir esse doce?")) {
+        if (confirm("Deletar esse doce?")) {
             await deleteDoc(doc(db, "produtos", id));
         }
     };
