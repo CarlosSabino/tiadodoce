@@ -64,10 +64,12 @@
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const db = getFirestore(app);
-    const EMAIL_ADMIN = "carlos.sabino@outlook.com.br";
-
+    // No topo do script do painel.html
+    const ADMINS = ["carlos.sabino@outlook.com.br", "outro.email@exemplo.com"];
+    
     onAuthStateChanged(auth, (user) => {
-        if (user && user.email === EMAIL_ADMIN) {
+        // Agora checamos se o user existe E se o e-mail está na lista
+        if (user && ADMINS.includes(user.email)) {
             document.getElementById('area-admin').style.display = 'block';
             iniciarEscutas();
         } else {
