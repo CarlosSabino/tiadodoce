@@ -37,6 +37,11 @@
             <div id="carrinho-itens"></div>
             <p><strong>Total: R$ <span id="total-valor">0,00</span></strong></p>
             <button class="btn btn-whatsapp" onclick="enviarPedido()">Finalizar no WhatsApp 🚀</button>
+            <button id="btn-admin-link" class="btn" style="display:none; background:#2d3436; color:white; margin-top:15px;" onclick="location.href='painel.html'">
+                ⚙️ Acessar Painel Administrativo
+            </button>
+            
+            <button class="btn" onclick="logout()" style="background:none; color:#aaa; font-size:0.8em; text-decoration:underline;">Sair</button>
             <button class="btn" onclick="logout()" style="background:none; color:#aaa; font-size:0.8em; text-decoration:underline;">Sair</button>
         </div>
     </div>
@@ -73,12 +78,30 @@
 
     window.logout = () => signOut(auth);
 
-    onAuthStateChanged(auth, (user) => {
-        document.getElementById('sessao-auth').style.display = user ? 'none' : 'block';
-        document.getElementById('sessao-cardapio').style.display = user ? 'block' : 'none';
-        if(user) {
-            document.getElementById('boas-vindas').innerText = "Oi, " + user.displayName + "! ✨";
-            carregarProdutos();
+    const EMAIL_ADMIN = "carlos.sabino@outlook.com.br"; // Seu e-mail de admin
+
+onAuthStateChanged(auth, (user) => {
+    const sessaoAuth = document.getElementById('sessao-auth');
+    const sessaoCardapio = document.getElementById('sessao-cardapio');
+    const btnAdmin = document.getElementById('btn-admin-link');
+
+    if (user) {
+        sessaoAuth.style.display = 'none';
+        sessaoCardapio.style.display = 'block';
+        document.getElementById('boas-vindas').innerText = "Oi, " + user.displayName + "! ✨";
+        
+        // --- LOGICA DO BOTÃO ADMIN ---
+        if (user.email === EMAIL_ADMIN) {
+            btnAdmin.style.display = 'block'; // Mostra o botão se for você
+        } else {
+            btnAdmin.style.display = 'none';  // Garante que fica escondido para os outros
+        }
+
+        carregarProdutos();
+        } else {
+            sessaoAuth.style.display = 'block';
+            sessaoCardapio.style.display = 'none';
+            btnAdmin.style.display = 'none';
         }
     });
 
