@@ -88,51 +88,33 @@
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const db = getFirestore(app);
-    const EMAIL_ADMIN = "carlos.sabino@outlook.com.br";
+    // 1. Defina a lista de e-mails permitidos
+const ADMINS = ["carlos.sabino@outlook.com.br", "outro.email@exemplo.com"]; 
 
-    // --- FUNÇÕES DE AUTH ---
-    window.btnLogin = () => {
-        const email = document.getElementById('loginEmail').value;
-        const senha = document.getElementById('loginSenha').value;
-        if (!email || !senha) return alert("Preencha e-mail e senha!");
-        signInWithEmailAndPassword(auth, email, senha).catch(e => alert("Erro ao entrar: " + e.message));
-    };
+onAuthStateChanged(auth, (user) => {
+    const sessaoAuth = document.getElementById('sessao-auth');
+    const sessaoCardapio = document.getElementById('sessao-cardapio');
+    const btnAdmin = document.getElementById('btn-admin-link');
+    const boasVindas = document.getElementById('boas-vindas');
 
-    window.btnCadastrar = () => {
-        const nome = document.getElementById('regNome').value;
-        const email = document.getElementById('regEmail').value;
-        const senha = document.getElementById('regSenha').value;
-        if(!nome || !email || !senha) return alert("Preencha todos os campos!");
-        createUserWithEmailAndPassword(auth, email, senha)
-            .then((res) => updateProfile(res.user, { displayName: nome }))
-            .catch(e => alert(e.message));
-    };
+    if (user) {
+        sessaoAuth.style.display = 'none';
+        sessaoCardapio.style.display = 'block';
 
-    window.logout = () => signOut(auth);
-
-    onAuthStateChanged(auth, (user) => {
-        const sessaoAuth = document.getElementById('sessao-auth');
-        const sessaoCardapio = document.getElementById('sessao-cardapio');
-        const btnAdmin = document.getElementById('btn-admin-link');
-        const boasVindas = document.getElementById('boas-vindas');
-
-        if (user) {
-            sessaoAuth.style.display = 'none';
-            sessaoCardapio.style.display = 'block';
-
-            if (user.email === EMAIL_ADMIN) {
-                boasVindas.innerText = "Oi, Tia! 🧁";
-                btnAdmin.style.display = 'block';
-            } else {
-                boasVindas.innerText = "Oi, " + (user.displayName || "Cliente") + "! ✨";
-                btnAdmin.style.display = 'none';
-            }
-            carregarProdutos();
+        // 2. Verifique se o e-mail logado está na nossa lista de ADMINS
+        if (ADMINS.includes(user.email)) {
+            boasVindas.innerText = "Oi, Tia! 🧁"; // Ou "Oi, Admin!"
+            btnAdmin.style.display = 'block';
         } else {
-            sessaoAuth.style.display = 'block';
-            sessaoCardapio.style.display = 'none';
+            boasVindas.innerText = "Oi, " + (user.displayName || "Cliente") + "! ✨";
+            btnAdmin.style.display = 'none';
         }
-    });
+        carregarProdutos();
+    } else {
+        sessaoAuth.style.display = 'block';
+        sessaoCardapio.style.display = 'none';
+    }
+});
 
     async function carregarProdutos() {
         const snap = await getDocs(collection(db, "produtos"));
