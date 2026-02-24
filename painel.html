@@ -5,63 +5,49 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Painel Admin - Tia do Doce</title>
     <style>
-        :root { --doce-rosa: #ff85a1; --doce-azul: #a2d2ff; --dark: #2d3436; }
-        
+        :root { --doce-rosa: #ff85a1; --doce-azul: #a2d2ff; }
         body { 
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-            /* Ajustado para o nome correto do arquivo */
+            font-family: 'Segoe UI', sans-serif; 
             background-image: url('fundo.png'); 
             background-size: cover;
             background-position: center;
             background-attachment: fixed;
-            margin: 0;
-            display: flex;
-            align-items: center;
-            min-height: 100vh;
-            padding: 20px;
+            margin: 0; padding: 20px;
+            display: flex; align-items: center; min-height: 100vh;
         }
-
         .admin-card { 
             background: rgba(255, 255, 255, 0.96); 
             backdrop-filter: blur(10px);
-            max-width: 600px; 
-            margin: auto; 
-            padding: 25px; 
-            border-radius: 20px; 
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2); 
+            max-width: 600px; margin: auto; padding: 25px; 
+            border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); 
             border: 2px solid white;
         }
-
-        h1 { color: var(--doce-rosa); text-align: center; text-shadow: 1px 1px white; }
+        h1 { color: var(--doce-rosa); text-align: center; }
         .form-group { display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; padding: 15px; background: rgba(255, 245, 248, 0.8); border-radius: 12px; }
         input { padding: 12px; border: 1px solid #ffc1d1; border-radius: 10px; outline: none; }
         .btn { padding: 12px 15px; border: none; border-radius: 10px; cursor: pointer; font-weight: bold; transition: 0.3s; }
         .btn-add { background: var(--doce-rosa); color: white; width: 100%; box-shadow: 0 4px 0 #d63384; }
         .item-admin { display: flex; justify-content: space-between; align-items: center; padding: 15px; border-bottom: 1px dashed var(--doce-rosa); }
         .controles { display: flex; align-items: center; gap: 10px; }
-        .btn-estoque { background: var(--doce-azul); border: none; width: 35px; height: 35px; border-radius: 8px; font-weight: bold; cursor: pointer; }
-        .btn-delete { background: #ff7675; color: white; margin-left: 10px; font-size: 0.8em; padding: 5px 10px; border-radius: 5px; border: none; cursor: pointer;}
+        .btn-estoque { background: var(--doce-azul); border: none; width: 35px; height: 35px; border-radius: 8px; cursor: pointer; font-weight: bold; }
+        .btn-delete { background: #ff7675; color: white; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer; font-size: 0.8em; }
     </style>
 </head>
 <body>
 
-<div class="admin-card">
+<div class="admin-card" id="card-principal" style="display: none;">
     <h1>Painel da Tia 🛠️</h1>
-    
     <div class="form-group">
         <h3>Novo Produto</h3>
         <input type="text" id="nome" placeholder="Nome do Doce">
-        <input type="number" id="preco" placeholder="Preço (Ex: 10.50)">
-        <input type="number" id="estoque" placeholder="Quantidade inicial">
-        <button class="btn btn-add" id="btnSalvar">Cadastrar no Cardápio</button>
+        <input type="number" id="preco" placeholder="Preço">
+        <input type="number" id="estoque" placeholder="Estoque">
+        <button class="btn btn-add" id="btnSalvar">Adicionar Doce</button>
     </div>
-
     <hr>
-
     <h3>Gestão de Estoque</h3>
     <div id="lista-admin">Carregando produtos...</div>
-    
-    <button onclick="location.href='index.html'" style="margin-top: 20px; background: none; border: none; color: #888; cursor: pointer; text-decoration: underline;">Voltar para o Cardápio</button>
+    <button onclick="location.href='index.html'" style="margin-top:20px; background:none; border:none; color:#888; text-decoration:underline; cursor:pointer;">Voltar ao Cardápio</button>
 </div>
 
 <script type="module">
@@ -81,20 +67,33 @@
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const db = getFirestore(app);
+    const EMAIL_ADMIN = "carlos.sabino@outlook.com.br";
 
-    // E-mail que você definiu como admin
-    const EMAIL_ADMIN = "carlos.sabino@outlook.com.br"; 
-
+    // 🛡️ LÓGICA DE PROTEÇÃO REFORMULADA
     onAuthStateChanged(auth, (user) => {
-        if (!user || user.email !== EMAIL_ADMIN) {
-            alert("Acesso negado!");
-            window.location.href = "index.html"; 
+        if (user) {
+            if (user.email === EMAIL_ADMIN) {
+                // Se for o admin, mostra o painel e carrega os dados
+                document.getElementById('card-principal').style.display = 'block';
+                carregarDados();
+            } else {
+                // Se estiver logado mas com e-mail errado
+                alert("Acesso Negado: Você não tem permissão de administrador.");
+                window.location.href = "index.html";
+            }
         } else {
-            carregarPainel();
+            // Se não houver nenhum usuário logado após a checagem inicial
+            // Damos um pequeno delay para o Firebase processar
+            setTimeout(() => {
+                if (!auth.currentUser) {
+                    alert("Por favor, faça login como Admin no Cardápio primeiro.");
+                    window.location.href = "index.html";
+                }
+            }, 1500);
         }
     });
 
-    function carregarPainel() {
+    function carregarDados() {
         onSnapshot(collection(db, "produtos"), (snapshot) => {
             const container = document.getElementById('lista-admin');
             container.innerHTML = "";
@@ -109,9 +108,8 @@
                         <button class="btn-estoque" onclick="ajustarEstoque('${id}', ${item.estoque - 1})">-</button>
                         <span>${item.estoque}</span>
                         <button class="btn-estoque" onclick="ajustarEstoque('${id}', ${item.estoque + 1})">+</button>
-                        <button class="btn btn-delete" onclick="deletarProduto('${id}')">Excluir</button>
-                    </div>
-                `;
+                        <button class="btn-delete" onclick="deletarProduto('${id}')">Deletar</button>
+                    </div>`;
                 container.appendChild(div);
             });
         });
@@ -121,20 +119,30 @@
         const nome = document.getElementById('nome').value;
         const preco = parseFloat(document.getElementById('preco').value);
         const estoque = parseInt(document.getElementById('estoque').value);
-        if (!nome || isNaN(preco)) return alert("Dados inválidos!");
-        await addDoc(collection(db, "produtos"), { nome, preco, estoque });
-        alert("Produto cadastrado!");
+        
+        if (!nome || isNaN(preco)) return alert("Preencha os campos corretamente!");
+        
+        try {
+            await addDoc(collection(db, "produtos"), { nome, preco, estoque });
+            alert("Doce adicionado com sucesso!");
+            document.getElementById('nome').value = "";
+            document.getElementById('preco').value = "";
+            document.getElementById('estoque').value = "";
+        } catch (e) {
+            alert("Erro ao salvar: " + e.message);
+        }
     };
 
-    window.ajustarEstoque = async (id, novoValor) => {
-        if (novoValor < 0) return;
-        await updateDoc(doc(db, "produtos", id), { estoque: novoValor });
+    window.ajustarEstoque = async (id, novo) => {
+        if (novo < 0) return;
+        await updateDoc(doc(db, "produtos", id), { estoque: novo });
     };
 
     window.deletarProduto = async (id) => {
-        if (confirm("Deletar esse doce?")) await deleteDoc(doc(db, "produtos", id));
+        if (confirm("Tem certeza que deseja excluir este doce do cardápio?")) {
+            await deleteDoc(doc(db, "produtos", id));
+        }
     };
 </script>
-
 </body>
 </html>
