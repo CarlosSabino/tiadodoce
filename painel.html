@@ -27,7 +27,6 @@
 
 <div class="admin-card" id="area-admin" style="display:none;">
     <h1>Painel de Gestão 🛠️</h1>
-    
     <div class="form-group">
         <h3>Cadastrar Novo Doce</h3>
         <input type="text" id="novo-nome" placeholder="Nome do Doce">
@@ -35,21 +34,17 @@
         <input type="number" id="novo-estoque" placeholder="Qtd Inicial">
         <button class="btn btn-add" id="btnSalvarProduto">Adicionar ao Cardápio</button>
     </div>
-
     <hr>
     <h3>📦 Estoque Atual</h3>
     <div id="lista-estoque">Buscando estoque...</div>
-
     <hr>
     <h3>💰 Fechamento de Quinzena</h3>
     <button class="btn" style="background:var(--doce-laranja); color:white; width:100%; margin-bottom:15px;" onclick="gerarRelatorioQuinzena()">📊 Gerar Extrato da Quinzena</button>
-    
     <div class="financeiro-box">
         <div>Abertos: <span id="qtd-p">0</span></div>
         <div>Total a Receber: R$ <span id="val-p">0,00</span></div>
     </div>
     <div id="lista-pedidos">Buscando pedidos...</div>
-
     <button onclick="location.href='index.html'" style="width:100%; margin-top:20px; background:#ddd; border:none; padding:12px; border-radius:10px; cursor:pointer; font-weight:bold;">Sair do Painel</button>
 </div>
 
@@ -95,15 +90,7 @@
             cont.innerHTML = "";
             snap.forEach(d => {
                 const item = d.data();
-                cont.innerHTML += `
-                    <div class="item-gestao">
-                        <span><b>${item.nome}</b> (Saldo: ${item.estoque})</span>
-                        <div class="controles">
-                            <button class="btn-mini" style="background:var(--doce-azul)" onclick="ajustarEstoque('${d.id}', ${item.estoque + 1})">+</button>
-                            <button class="btn-mini" style="background:var(--doce-azul)" onclick="ajustarEstoque('${d.id}', ${item.estoque - 1})">-</button>
-                            <button class="btn-mini" style="background:var(--doce-cancel); color:white;" onclick="removerDoce('${d.id}')">X</button>
-                        </div>
-                    </div>`;
+                cont.innerHTML += `<div class="item-gestao"><span><b>${item.nome}</b> (Saldo: ${item.estoque})</span><div class="controles"><button class="btn-mini" style="background:var(--doce-azul)" onclick="ajustarEstoque('${d.id}', ${item.estoque + 1})">+</button><button class="btn-mini" style="background:var(--doce-azul)" onclick="ajustarEstoque('${d.id}', ${item.estoque - 1})">-</button><button class="btn-mini" style="background:var(--doce-cancel); color:white;" onclick="removerDoce('${d.id}')">X</button></div></div>`;
             });
         });
 
@@ -118,32 +105,11 @@
             docs.forEach(ped => {
                 const isCancelado = ped.status === "Cancelado";
                 if(!isCancelado && ped.status !== "Pago") { qAbertos++; vTotal += ped.total; }
-                
                 let listaItens = "";
                 if(ped.itens) Object.keys(ped.itens).forEach(n => listaItens += `<small>• ${ped.itens[n].qtd}x ${n}</small><br>`);
+                const statusFin = ped.status === "Pago" ? '<span style="color:var(--doce-verde)">[PAGO]</span>' : (isCancelado ? '<span style="color:#aaa">[CANCELADO]</span>' : '<span style="color:var(--doce-laranja)">[PENDENTE]</span>');
 
-                const statusFinanceiro = ped.status === "Pago" ? '<span style="color:var(--doce-verde)">[PAGO]</span>' : 
-                                        (isCancelado ? '<span style="color:#aaa">[CANCELADO]</span>' : '<span style="color:var(--doce-laranja)">[PENDENTE]</span>');
-
-                cont.innerHTML += `
-                <div class="pedido-card" style="border-left: 6px solid ${isCancelado ? '#ccc' : (ped.status === 'Pago' ? 'var(--doce-verde)' : 'var(--doce-rosa)')}; background: ${isCancelado ? 'var(--fundo-cancel)' : 'white'}">
-                    <div style="display:flex; justify-content:space-between; align-items:center;">
-                        <b style="${isCancelado ? 'color:#888; text-decoration:line-through;' : ''}">${ped.cliente}</b>
-                        <span>
-                            ${ped.entregue ? '<span class="status-badge" style="background:var(--doce-azul); color:white;">Entregue</span>' : ''}
-                            ${statusFinanceiro}
-                        </span>
-                    </div>
-                    <div style="margin: 10px 0; color: ${isCancelado ? '#aaa' : '#444'};">${listaItens}</div>
-                    <div style="font-size: 0.85em; color: #666;">
-                        💰 R$ ${ped.total.toFixed(2)} | 💳 ${ped.pagamento} | 📅 ${new Date(ped.data).toLocaleDateString()}
-                    </div>
-                    <div style="margin-top: 12px; display: flex; gap: 8px; flex-wrap: wrap;">
-                        ${!isCancelado && ped.status !== "Pago" ? `<button class="btn-mini" style="background:var(--doce-verde); color:white;" onclick="baixarPedido('${ped.id}')">Baixar $</button>` : ''}
-                        ${!isCancelado && !ped.entregue ? `<button class="btn-mini" style="background:var(--doce-azul); color:white;" onclick="entregarPedido('${ped.id}')">Entregar</button>` : ''}
-                        ${!isCancelado && ped.status === "Pendente" ? `<button class="btn-mini" style="background:var(--doce-cancel); color:white;" onclick="cancelarPedido('${ped.id}')">Cancelar</button>` : ''}
-                    </div>
-                </div>`;
+                cont.innerHTML += `<div class="pedido-card" style="border-left: 6px solid ${isCancelado ? '#ccc' : (ped.status === 'Pago' ? 'var(--doce-verde)' : 'var(--doce-rosa)')}; background: ${isCancelado ? 'var(--fundo-cancel)' : 'white'}"><div style="display:flex; justify-content:space-between; align-items:center;"><b style="${isCancelado ? 'color:#888; text-decoration:line-through;' : ''}">${ped.cliente}</b><span>${ped.entregue ? '<span class="status-badge" style="background:var(--doce-azul); color:white;">Entregue</span>' : ''}${statusFin}</span></div><div style="margin: 10px 0; color: ${isCancelado ? '#aaa' : '#444'};">${listaItens}</div><div style="font-size: 0.85em; color: #666;">💰 R$ ${ped.total.toFixed(2)} | 💳 ${ped.pagamento} | 📅 ${new Date(ped.data).toLocaleDateString()}</div><div style="margin-top: 12px; display: flex; gap: 8px; flex-wrap: wrap;">${!isCancelado && ped.status !== "Pago" ? `<button class="btn-mini" style="background:var(--doce-verde); color:white;" onclick="baixarPedido('${ped.id}')">Baixar $</button>` : ''}${!isCancelado && !ped.entregue ? `<button class="btn-mini" style="background:var(--doce-azul); color:white;" onclick="entregarPedido('${ped.id}')">Entregar</button>` : ''}${!isCancelado && ped.status === "Pendente" ? `<button class="btn-mini" style="background:var(--doce-cancel); color:white;" onclick="cancelarPedido('${ped.id}')">Cancelar</button>` : ''}</div></div>`;
             });
             document.getElementById('qtd-p').innerText = qAbertos;
             document.getElementById('val-p').innerText = vTotal.toFixed(2);
@@ -174,36 +140,31 @@
     };
 
     window.cancelarPedido = async (id) => {
-        if(confirm("Deseja cancelar o pedido e devolver os itens ao estoque?")) {
+        if(confirm("Cancelar pedido e estornar estoque?")) {
             const docRef = doc(db, "pedidos", id);
             const snap = await getDocs(query(collection(db, "pedidos"), where("__name__", "==", id)));
-            
             snap.forEach(async (d) => {
                 const ped = d.data();
-                // Estorno de estoque
                 for (const nomeItem in ped.itens) {
                     const q = query(collection(db, "produtos"), where("nome", "==", nomeItem));
                     const pSnap = await getDocs(q);
                     pSnap.forEach(async (pDoc) => {
-                        await updateDoc(doc(db, "produtos", pDoc.id), {
-                            estoque: pDoc.data().estoque + ped.itens[nomeItem].qtd
-                        });
+                        await updateDoc(doc(db, "produtos", pDoc.id), { estoque: pDoc.data().estoque + ped.itens[nomeItem].qtd });
                     });
                 }
-                // Update status
                 await updateDoc(docRef, { status: "Cancelado" });
             });
         }
     };
 
     window.ajustarEstoque = async (id, valor) => { if(valor >= 0) await updateDoc(doc(db, "produtos", id), { estoque: valor }); };
-    window.removerDoce = async (id) => { if(confirm("Remover produto?")) await deleteDoc(doc(db, "produtos", id)); };
+    window.removerDoce = async (id) => { if(confirm("Remover?")) await deleteDoc(doc(db, "produtos", id)); };
     window.baixarPedido = async (id) => { if(confirm("Confirmar pagamento?")) await updateDoc(doc(db, "pedidos", id), { status: "Pago" }); };
     window.entregarPedido = async (id) => { if(confirm("Confirmar entrega?")) await updateDoc(doc(db, "pedidos", id), { entregue: true }); };
     
     document.getElementById('btnSalvarProduto').onclick = async () => {
         const n = document.getElementById('novo-nome').value, p = parseFloat(document.getElementById('novo-preco').value), e = parseInt(document.getElementById('novo-estoque').value);
-        if(!n || isNaN(p)) return alert("Preencha corretamente!");
+        if(!n || isNaN(p)) return alert("Erro!");
         await addDoc(collection(db, "produtos"), { nome: n, preco: p, estoque: e || 0 });
         alert("Cadastrado!");
         document.getElementById('novo-nome').value = ""; document.getElementById('novo-preco').value = ""; document.getElementById('novo-estoque').value = "";
