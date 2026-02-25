@@ -10,15 +10,15 @@
         .admin-card { background: rgba(255, 255, 255, 0.96); backdrop-filter: blur(10px); max-width: 650px; margin: auto; padding: 25px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); border: 2px solid white; }
         h1, h3 { color: #d63384; text-align: center; }
         .form-group { display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; padding: 15px; background: rgba(255, 245, 248, 0.8); border-radius: 12px; }
-        input { padding: 12px; border: 1px solid #ffc1d1; border-radius: 10px; outline: none; font-family: inherit; }
+        input { padding: 10px; border: 1px solid #ffc1d1; border-radius: 8px; outline: none; font-family: inherit; }
         .btn { padding: 12px 15px; border: none; border-radius: 10px; cursor: pointer; font-weight: bold; transition: 0.3s; }
         .btn-add { background: var(--doce-rosa); color: white; width: 100%; margin-bottom: 10px; }
-        .item-gestao { display: flex; justify-content: space-between; align-items: center; padding: 12px; border-bottom: 1px dashed var(--doce-rosa); margin-bottom: 5px; }
-        .controles { display: flex; align-items: center; gap: 8px; }
+        .item-gestao { display: flex; flex-direction: column; padding: 15px; border-bottom: 1px dashed var(--doce-rosa); margin-bottom: 10px; background: white; border-radius: 12px; }
+        .linha-info { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+        .controles-preco { display: flex; align-items: center; gap: 10px; background: #fff5f8; padding: 8px; border-radius: 8px; }
         .btn-mini { padding: 8px 12px; border-radius: 8px; border: none; cursor: pointer; font-size: 0.8em; font-weight: bold; }
         .financeiro-box { background: #e3f2fd; padding: 15px; border-radius: 12px; margin: 20px 0; display: flex; justify-content: space-around; font-weight: bold; color: #1976d2; border: 1px solid var(--doce-azul); }
         .pedido-card { background: white; border: 1px solid #eee; padding: 15px; border-radius: 12px; margin-bottom: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
-        .status-badge { font-size: 0.75em; padding: 3px 8px; border-radius: 5px; margin-left: 5px; font-weight: bold; text-transform: uppercase; }
         #modal-relatorio { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); z-index:10000; padding:20px; overflow-y:auto; align-items: flex-start; justify-content: center; }
         .relatorio-container { background: white; border-radius: 20px; padding: 25px; width: 100%; max-width: 500px; margin-top: 50px; }
     </style>
@@ -27,6 +27,7 @@
 
 <div class="admin-card" id="area-admin" style="display:none;">
     <h1>Painel de Gestão 🛠️</h1>
+    
     <div class="form-group">
         <h3>Cadastrar Novo Doce</h3>
         <input type="text" id="novo-nome" placeholder="Nome do Doce">
@@ -34,17 +35,21 @@
         <input type="number" id="novo-estoque" placeholder="Qtd Inicial">
         <button class="btn btn-add" id="btnSalvarProduto">Adicionar ao Cardápio</button>
     </div>
+
     <hr>
-    <h3>📦 Estoque Atual</h3>
-    <div id="lista-estoque">Buscando estoque...</div>
+    <h3>📦 Estoque e Preços</h3>
+    <div id="lista-estoque">Buscando dados...</div>
+
     <hr>
     <h3>💰 Fechamento de Quinzena</h3>
     <button class="btn" style="background:var(--doce-laranja); color:white; width:100%; margin-bottom:15px;" onclick="gerarRelatorioQuinzena()">📊 Gerar Extrato da Quinzena</button>
+    
     <div class="financeiro-box">
         <div>Abertos: <span id="qtd-p">0</span></div>
-        <div>Total a Receber: R$ <span id="val-p">0,00</span></div>
+        <div>A Receber: R$ <span id="val-p">0,00</span></div>
     </div>
     <div id="lista-pedidos">Buscando pedidos...</div>
+
     <button onclick="location.href='index.html'" style="width:100%; margin-top:20px; background:#ddd; border:none; padding:12px; border-radius:10px; cursor:pointer; font-weight:bold;">Sair do Painel</button>
 </div>
 
@@ -90,7 +95,26 @@
             cont.innerHTML = "";
             snap.forEach(d => {
                 const item = d.data();
-                cont.innerHTML += `<div class="item-gestao"><span><b>${item.nome}</b> (Saldo: ${item.estoque})</span><div class="controles"><button class="btn-mini" style="background:var(--doce-azul)" onclick="ajustarEstoque('${d.id}', ${item.estoque + 1})">+</button><button class="btn-mini" style="background:var(--doce-azul)" onclick="ajustarEstoque('${d.id}', ${item.estoque - 1})">-</button><button class="btn-mini" style="background:var(--doce-cancel); color:white;" onclick="removerDoce('${d.id}')">X</button></div></div>`;
+                cont.innerHTML += `
+                    <div class="item-gestao">
+                        <div class="linha-info">
+                            <strong>${item.nome}</strong>
+                            <button class="btn-mini" style="background:var(--doce-cancel); color:white;" onclick="removerDoce('${d.id}')">Excluir</button>
+                        </div>
+                        <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+                            <div class="controles-preco">
+                                💰 R$ <input type="number" step="0.01" value="${item.preco.toFixed(2)}" 
+                                    style="width:70px; border:none; background:transparent; font-weight:bold;"
+                                    onchange="ajustarPreco('${d.id}', this.value)">
+                            </div>
+                            <div class="controles-preco">
+                                📦 Estoque: 
+                                <button class="btn-mini" style="background:#fff; border:1px solid #ddd;" onclick="ajustarEstoque('${d.id}', ${item.estoque - 1})">-</button>
+                                <span style="min-width:20px; text-align:center">${item.estoque}</span>
+                                <button class="btn-mini" style="background:#fff; border:1px solid #ddd;" onclick="ajustarEstoque('${d.id}', ${item.estoque + 1})">+</button>
+                            </div>
+                        </div>
+                    </div>`;
             });
         });
 
@@ -109,12 +133,59 @@
                 if(ped.itens) Object.keys(ped.itens).forEach(n => listaItens += `<small>• ${ped.itens[n].qtd}x ${n}</small><br>`);
                 const statusFin = ped.status === "Pago" ? '<span style="color:var(--doce-verde)">[PAGO]</span>' : (isCancelado ? '<span style="color:#aaa">[CANCELADO]</span>' : '<span style="color:var(--doce-laranja)">[PENDENTE]</span>');
 
-                cont.innerHTML += `<div class="pedido-card" style="border-left: 6px solid ${isCancelado ? '#ccc' : (ped.status === 'Pago' ? 'var(--doce-verde)' : 'var(--doce-rosa)')}; background: ${isCancelado ? 'var(--fundo-cancel)' : 'white'}"><div style="display:flex; justify-content:space-between; align-items:center;"><b style="${isCancelado ? 'color:#888; text-decoration:line-through;' : ''}">${ped.cliente}</b><span>${ped.entregue ? '<span class="status-badge" style="background:var(--doce-azul); color:white;">Entregue</span>' : ''}${statusFin}</span></div><div style="margin: 10px 0; color: ${isCancelado ? '#aaa' : '#444'};">${listaItens}</div><div style="font-size: 0.85em; color: #666;">💰 R$ ${ped.total.toFixed(2)} | 💳 ${ped.pagamento} | 📅 ${new Date(ped.data).toLocaleDateString()}</div><div style="margin-top: 12px; display: flex; gap: 8px; flex-wrap: wrap;">${!isCancelado && ped.status !== "Pago" ? `<button class="btn-mini" style="background:var(--doce-verde); color:white;" onclick="baixarPedido('${ped.id}')">Baixar $</button>` : ''}${!isCancelado && !ped.entregue ? `<button class="btn-mini" style="background:var(--doce-azul); color:white;" onclick="entregarPedido('${ped.id}')">Entregar</button>` : ''}${!isCancelado && ped.status === "Pendente" ? `<button class="btn-mini" style="background:var(--doce-cancel); color:white;" onclick="cancelarPedido('${ped.id}')">Cancelar</button>` : ''}</div></div>`;
+                cont.innerHTML += `
+                <div class="pedido-card" style="border-left: 6px solid ${isCancelado ? '#ccc' : (ped.status === 'Pago' ? 'var(--doce-verde)' : 'var(--doce-rosa)')}; background: ${isCancelado ? 'var(--fundo-cancel)' : 'white'}">
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <b style="${isCancelado ? 'color:#888; text-decoration:line-through;' : ''}">${ped.cliente}</b>
+                        <span>${ped.entregue ? '<span class="status-badge" style="background:var(--doce-azul); color:white;">Entregue</span>' : ''}${statusFin}</span>
+                    </div>
+                    <div style="margin: 10px 0; color: ${isCancelado ? '#aaa' : '#444'};">${listaItens}</div>
+                    <div style="font-size: 0.85em; color: #666;">💰 R$ ${ped.total.toFixed(2)} | 💳 ${ped.pagamento} | 📅 ${new Date(ped.data).toLocaleDateString()}</div>
+                    <div style="margin-top: 12px; display: flex; gap: 8px; flex-wrap: wrap;">
+                        ${!isCancelado && ped.status !== "Pago" ? `<button class="btn-mini" style="background:var(--doce-verde); color:white;" onclick="baixarPedido('${ped.id}')">Baixar $</button>` : ''}
+                        ${!isCancelado && !ped.entregue ? `<button class="btn-mini" style="background:var(--doce-azul); color:white;" onclick="entregarPedido('${ped.id}')">Entregar</button>` : ''}
+                        ${!isCancelado && ped.status === "Pendente" ? `<button class="btn-mini" style="background:var(--doce-cancel); color:white;" onclick="cancelarPedido('${ped.id}')">Cancelar</button>` : ''}
+                    </div>
+                </div>`;
             });
             document.getElementById('qtd-p').innerText = qAbertos;
             document.getElementById('val-p').innerText = vTotal.toFixed(2);
         });
     }
+
+    // FUNÇÕES DE ATUALIZAÇÃO
+    window.ajustarPreco = async (id, novoPreco) => {
+        const precoNum = parseFloat(novoPreco);
+        if(!isNaN(precoNum) && precoNum >= 0) {
+            await updateDoc(doc(db, "produtos", id), { preco: precoNum });
+        }
+    };
+
+    window.ajustarEstoque = async (id, valor) => { 
+        if(valor >= 0) await updateDoc(doc(db, "produtos", id), { estoque: valor }); 
+    };
+
+    window.cancelarPedido = async (id) => {
+        if(confirm("Cancelar pedido e estornar estoque?")) {
+            const docRef = doc(db, "pedidos", id);
+            const snap = await getDocs(query(collection(db, "pedidos"), where("__name__", "==", id)));
+            snap.forEach(async (d) => {
+                const ped = d.data();
+                for (const nomeItem in ped.itens) {
+                    const q = query(collection(db, "produtos"), where("nome", "==", nomeItem));
+                    const pSnap = await getDocs(q);
+                    pSnap.forEach(async (pDoc) => {
+                        await updateDoc(doc(db, "produtos", pDoc.id), { estoque: pDoc.data().estoque + ped.itens[nomeItem].qtd });
+                    });
+                }
+                await updateDoc(docRef, { status: "Cancelado" });
+            });
+        }
+    };
+
+    window.baixarPedido = async (id) => { if(confirm("Confirmar pagamento?")) await updateDoc(doc(db, "pedidos", id), { status: "Pago" }); };
+    window.entregarPedido = async (id) => { if(confirm("Confirmar entrega?")) await updateDoc(doc(db, "pedidos", id), { entregue: true }); };
+    window.removerDoce = async (id) => { if(confirm("Remover este produto permanentemente?")) await deleteDoc(doc(db, "produtos", id)); };
 
     window.gerarRelatorioQuinzena = async () => {
         const snap = await getDocs(collection(db, "pedidos"));
@@ -139,38 +210,15 @@
         document.getElementById('modal-relatorio').style.display = 'flex';
     };
 
-    window.cancelarPedido = async (id) => {
-        if(confirm("Cancelar pedido e estornar estoque?")) {
-            const docRef = doc(db, "pedidos", id);
-            const snap = await getDocs(query(collection(db, "pedidos"), where("__name__", "==", id)));
-            snap.forEach(async (d) => {
-                const ped = d.data();
-                for (const nomeItem in ped.itens) {
-                    const q = query(collection(db, "produtos"), where("nome", "==", nomeItem));
-                    const pSnap = await getDocs(q);
-                    pSnap.forEach(async (pDoc) => {
-                        await updateDoc(doc(db, "produtos", pDoc.id), { estoque: pDoc.data().estoque + ped.itens[nomeItem].qtd });
-                    });
-                }
-                await updateDoc(docRef, { status: "Cancelado" });
-            });
-        }
-    };
-
-    window.ajustarEstoque = async (id, valor) => { if(valor >= 0) await updateDoc(doc(db, "produtos", id), { estoque: valor }); };
-    window.removerDoce = async (id) => { if(confirm("Remover?")) await deleteDoc(doc(db, "produtos", id)); };
-    window.baixarPedido = async (id) => { if(confirm("Confirmar pagamento?")) await updateDoc(doc(db, "pedidos", id), { status: "Pago" }); };
-    window.entregarPedido = async (id) => { if(confirm("Confirmar entrega?")) await updateDoc(doc(db, "pedidos", id), { entregue: true }); };
-    
     document.getElementById('btnSalvarProduto').onclick = async () => {
         const n = document.getElementById('novo-nome').value, p = parseFloat(document.getElementById('novo-preco').value), e = parseInt(document.getElementById('novo-estoque').value);
-        if(!n || isNaN(p)) return alert("Erro!");
-        await addDoc(collection(db, "produtos"), { nome: n, preco: p, estoque: e || 0 });
-        alert("Cadastrado!");
+        if(!n || isNaN(p)) return alert("Preencha o nome e o preço corretamente!");
+        await addDoc(collection(db, "produtos"), { nome: n, preco: p, estoque: e || 0, fotoUrl: "" });
+        alert("Cadastrado com sucesso!");
         document.getElementById('novo-nome').value = ""; document.getElementById('novo-preco').value = ""; document.getElementById('novo-estoque').value = "";
     };
 
-    window.collection = collection; window.db = db; window.getDocs = getDocs; window.query = query; window.where = where;
+    window.db = db; window.collection = collection; window.getDocs = getDocs; window.query = query; window.where = where;
 </script>
 </body>
 </html>
