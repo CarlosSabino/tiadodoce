@@ -17,6 +17,9 @@
         .btn-add { background: var(--doce-azul); border: none; border-radius: 8px; padding: 5px 12px; cursor: pointer; }
         .item-carrinho { display: flex; justify-content: space-between; font-size: 0.95em; margin-bottom: 8px; border-left: 3px solid var(--doce-rosa); padding-left: 8px; }
         .pedido-mini-card { background: #fff; padding: 12px; border-radius: 15px; margin-bottom: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        
+        /* Modal Pix */
+        #modal-pix { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); z-index:9999; justify-content:center; align-items:center; padding: 20px; box-sizing: border-box;}
     </style>
 </head>
 <body>
@@ -50,11 +53,11 @@
             <p><strong>Total: R$ <span id="total-valor">0,00</span></strong></p>
             <select id="forma-pagamento">
                 <option value="" disabled selected>Forma de Pagamento?</option>
-                <option value="Pix">Pix (Na hora)</option>
+                <option value="Pix">Pix (Pagar Agora) ⚡</option>
                 <option value="Dinheiro">Dinheiro (Na hora)</option>
                 <option value="Quinzena">Pagar na Quinzena (Pendura)</option>
             </select>
-            <button class="btn btn-whatsapp" onclick="enviarPedido()">Finalizar no WhatsApp 🚀</button>
+            <button class="btn btn-whatsapp" onclick="enviarPedido()">Finalizar Pedido 🚀</button>
         </div>
 
         <hr style="margin-top: 30px; border: 1px solid #ffdeeb;">
@@ -64,6 +67,17 @@
         <div style="margin-top:20px; border-top: 1px solid #eee; padding-top: 10px;">
             <button id="btn-admin-link" class="btn" style="display:none; background:#2d3436; color:white; margin-bottom:10px;" onclick="location.href='painel.html'">⚙️ Painel Administrativo</button>
             <button class="btn" onclick="logout()" style="background:none; color:#aaa; font-size:0.8em; text-decoration:underline; width:100%;">Sair</button>
+        </div>
+    </div>
+
+    <div id="modal-pix">
+        <div class="glass-card" style="max-width:320px; text-align:center; margin: auto;">
+            <h3 style="color:#d63384;">Pagamento via Pix ⚡</h3>
+            <p style="font-size:0.8em; color:#666;">Pague o valor abaixo para a Tia:</p>
+            <div id="qrcode-area" style="margin:15px 0; background: white; padding: 10px; border-radius: 10px; display: inline-block;"></div>
+            <p><strong>Total: R$ <span id="pix-valor-total">0,00</span></strong></p>
+            <button class="btn" style="background:#eee; font-size:0.8em;" onclick="copiarChave()">Copiar Chave (11984756872)</button>
+            <button class="btn btn-principal" onclick="fecharPix()">Já paguei / Continuar ✅</button>
         </div>
     </div>
 
@@ -89,6 +103,7 @@
     window.btnLogin = () => {
         const e = document.getElementById('loginEmail').value;
         const s = document.getElementById('loginSenha').value;
+        if(!e || !s) return alert("Preencha e-mail e senha!");
         signInWithEmailAndPassword(auth, e, s).catch(err => alert("Erro: " + err.message));
     };
 
@@ -143,22 +158,9 @@
                 const ped = doc.data();
                 const cor = ped.status === "Cancelado" ? "var(--doce-cancel)" : (ped.entregue ? "var(--doce-azul)" : "var(--doce-rosa)");
                 const statusPgto = ped.status === "Pago" ? "✅ PAGO" : "⚠️ AGUARDANDO PAGAMENTO";
-                
                 let itensH = "";
                 if(ped.itens) Object.keys(ped.itens).forEach(n => itensH += `<div style="font-size:0.8em;color:#555">• ${ped.itens[n].qtd}x ${n}</div>`);
-                
-                container.innerHTML += `
-                    <div class="pedido-mini-card" style="border-left: 5px solid ${cor}">
-                        <div style="display:flex; justify-content:space-between; align-items:center;">
-                            <strong>#${ped.pedidoId}</strong> 
-                            <span style="color:${cor};font-size:0.7em;font-weight:bold;">${ped.entregue ? 'ENTREGUE' : ped.status.toUpperCase()}</span>
-                        </div>
-                        <div style="margin:5px 0;">${itensH}</div>
-                        <div style="font-size: 0.7em; font-weight: bold; color: ${ped.status === "Pago" ? "#25d366" : "#e67e22"}; margin-bottom: 5px;">${statusPgto}</div>
-                        <div style="display:flex; justify-content:space-between; font-size:0.85em; margin-top:5px; border-top:1px dashed #eee; padding-top:5px;">
-                            <span>${new Date(ped.data).toLocaleDateString()}</span> <strong>R$ ${ped.total.toFixed(2)}</strong>
-                        </div>
-                    </div>`;
+                container.innerHTML += `<div class="pedido-mini-card" style="border-left: 5px solid ${cor}"><div style="display:flex; justify-content:space-between; align-items:center;"><strong>#${ped.pedidoId}</strong> <span style="color:${cor};font-size:0.7em;font-weight:bold;">${ped.entregue ? 'ENTREGUE' : ped.status.toUpperCase()}</span></div><div style="margin:5px 0;">${itensH}</div><div style="font-size: 0.7em; font-weight: bold; color: ${ped.status === "Pago" ? "#25d366" : "#e67e22"}; margin-bottom: 5px;">${statusPgto}</div><div style="display:flex; justify-content:space-between; font-size:0.85em; margin-top:5px; border-top:1px dashed #eee; padding-top:5px;"><span>${new Date(ped.data).toLocaleDateString()}</span> <strong>R$ ${ped.total.toFixed(2)}</strong></div></div>`;
             });
         });
     }
@@ -196,12 +198,14 @@
             k.map(n => `<div class="item-carrinho"><span>${carrinho[n].qtd}x ${n}</span> <button onclick="remover('${n}')" style="background:#ff7675; color:white; border:none; border-radius:5px; padding:2px 8px; cursor:pointer;">X</button></div>`).join('');
         document.getElementById('total-valor').innerText = total.toFixed(2);
     }
+
     window.enviarPedido = async () => {
         const pg = document.getElementById('forma-pagamento').value;
         if(!pg) return alert("Escolha o pagamento!");
         if(total <= 0) return alert("Carrinho vazio!");
         const pid = Math.random().toString(36).substring(2, 6).toUpperCase();
         const u = window.auth.currentUser;
+
         try {
             await window.addDoc(window.collection(window.db, "pedidos"), {
                 pedidoId: pid, cliente: u.displayName, emailCliente: u.email, total, status: "Pendente", pagamento: pg, data: new Date().toISOString(), itens: carrinho, entregue: false
@@ -211,13 +215,38 @@
                 const s = await window.getDocs(q);
                 s.forEach(async (d) => { await window.updateDoc(window.doc(window.db, "produtos", d.id), { estoque: Math.max(0, d.data().estoque - carrinho[n].qtd) }); });
             }
+
             let m = `*NOVO PEDIDO DA TIA* 🧁✨\n--------------------------------\n🆔 *#${pid}*\n👤 *CLIENTE:* ${u.displayName}\n--------------------------------\n\n*ITENS:*\n`;
             Object.keys(carrinho).forEach(n => m += `🔹 *${carrinho[n].qtd}x* ${n}\n`);
             m += `\n💰 *TOTAL:* R$ ${total.toFixed(2)}\n💳 *PGTO:* ${pg}\n--------------------------------\n_Enviando comprovante..._ 😍`;
-            alert("🎉 Pedido Confirmado! Abrindo WhatsApp...");
-            window.open(`https://wa.me/5511973019207?text=${encodeURIComponent(m)}`);
-            carrinho = {}; total = 0; renderizar();
+            
+            if(pg === "Pix") {
+                document.getElementById('pix-valor-total').innerText = total.toFixed(2);
+                document.getElementById('qrcode-area').innerHTML = `<img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=11984756872" style="display:block;">`;
+                document.getElementById('modal-pix').style.display = 'flex';
+                window.msgZapTemp = m;
+            } else {
+                alert("🎉 Pedido Confirmado! Abrindo WhatsApp...");
+                window.open(`https://wa.me/5511984756872?text=${encodeURIComponent(m)}`);
+                resetarCarrinho();
+            }
         } catch (e) { alert("Erro ao processar!"); }
+    }
+
+    window.fecharPix = () => {
+        document.getElementById('modal-pix').style.display = 'none';
+        window.open(`https://wa.me/5511984756872?text=${encodeURIComponent(window.msgZapTemp)}`);
+        resetarCarrinho();
+    };
+
+    window.copiarChave = () => {
+        navigator.clipboard.writeText("11984756872");
+        alert("Chave Pix Copiada!");
+    };
+
+    function resetarCarrinho() {
+        carrinho = {}; total = 0; renderizar();
+        document.getElementById('forma-pagamento').value = "";
     }
 </script>
 </body>
