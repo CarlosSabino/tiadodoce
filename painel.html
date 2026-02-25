@@ -19,8 +19,33 @@
         .btn-mini { padding: 8px 12px; border-radius: 8px; border: none; cursor: pointer; font-size: 0.8em; font-weight: bold; }
         .financeiro-box { background: #e3f2fd; padding: 15px; border-radius: 12px; margin: 20px 0; display: flex; justify-content: space-around; font-weight: bold; color: #1976d2; border: 1px solid var(--doce-azul); }
         .pedido-card { background: white; border: 1px solid #eee; padding: 15px; border-radius: 12px; margin-bottom: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
-        #modal-relatorio { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); z-index:10000; padding:20px; overflow-y:auto; align-items: flex-start; justify-content: center; }
-        .relatorio-container { background: white; border-radius: 20px; padding: 25px; width: 100%; max-width: 500px; margin-top: 50px; }
+        
+        /* FIX: Modal Relatório 100% Centralizado */
+        #modal-relatorio { 
+            display:none; 
+            position:fixed; 
+            top:0; 
+            left:0; 
+            width:100%; 
+            height:100%; 
+            background:rgba(0,0,0,0.85); 
+            z-index:10000; 
+            padding:20px; 
+            display: none; 
+            align-items: center; /* Centraliza verticalmente */
+            justify-content: center; /* Centraliza horizontalmente */
+            box-sizing: border-box;
+        }
+        .relatorio-container { 
+            background: white; 
+            border-radius: 20px; 
+            padding: 25px; 
+            width: 100%; 
+            max-width: 450px; 
+            max-height: 80vh; 
+            overflow-y: auto; 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
     </style>
 </head>
 <body>
@@ -50,12 +75,12 @@
     </div>
     <div id="lista-pedidos">Buscando pedidos...</div>
 
-    <button onclick="location.href='index.html'" style="width:100%; margin-top:20px; background:#ddd; border:none; padding:12px; border-radius:10px; cursor:pointer; font-weight:bold;">Sair do Painel</button>
+    <button onclick="logout()" style="width:100%; margin-top:20px; background:#ddd; border:none; padding:12px; border-radius:10px; cursor:pointer; font-weight:bold;">Sair do Painel</button>
 </div>
 
-<div id="modal-relatorio">
+<div id="modal-relatorio" style="display: none;">
     <div class="relatorio-container">
-        <h2 style="color:var(--doce-rosa); text-align: center;">Extrato de Devedores 📝</h2>
+        <h2 style="color:var(--doce-rosa); text-align: center; margin-top: 0;">Extrato de Devedores 📝</h2>
         <div id="conteudo-relatorio" style="margin: 20px 0;"></div>
         <button class="btn" style="background:#eee; width: 100%;" onclick="document.getElementById('modal-relatorio').style.display='none'">Fechar Relatório</button>
     </div>
@@ -63,7 +88,7 @@
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+    import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
     import { getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, getDocs, query, where } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
     const firebaseConfig = {
@@ -88,6 +113,8 @@
             window.location.href = "index.html";
         }
     });
+
+    window.logout = () => signOut(auth);
 
     function iniciarEscutas() {
         onSnapshot(collection(db, "produtos"), (snap) => {
@@ -153,7 +180,6 @@
         });
     }
 
-    // FUNÇÕES DE ATUALIZAÇÃO
     window.ajustarPreco = async (id, novoPreco) => {
         const precoNum = parseFloat(novoPreco);
         if(!isNaN(precoNum) && precoNum >= 0) {
@@ -207,6 +233,7 @@
         }
         if(Object.keys(dividas).length === 0) area.innerHTML = "<p style='text-align:center; color:#aaa;'>Tudo pago! 🎉</p>";
         else area.innerHTML += `<div style="margin-top:20px; font-size:1.1em; text-align:right; color:#d63384;"><strong>Total: R$ ${totalGeral.toFixed(2)}</strong></div>`;
+        
         document.getElementById('modal-relatorio').style.display = 'flex';
     };
 
