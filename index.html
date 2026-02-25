@@ -17,8 +17,6 @@
         .btn-add { background: var(--doce-azul); border: none; border-radius: 8px; padding: 5px 12px; cursor: pointer; }
         .item-carrinho { display: flex; justify-content: space-between; font-size: 0.95em; margin-bottom: 8px; border-left: 3px solid var(--doce-rosa); padding-left: 8px; }
         .pedido-mini-card { background: #fff; padding: 12px; border-radius: 15px; margin-bottom: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
-        
-        /* Modal Pix */
         #modal-pix { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); z-index:9999; justify-content:center; align-items:center; padding: 20px; box-sizing: border-box;}
     </style>
 </head>
@@ -101,18 +99,15 @@
     const ADMINS = ["carlos.sabino@outlook.com.br", "lialmeyda@hotmail.com"]; 
 
     window.btnLogin = () => {
-        const e = document.getElementById('loginEmail').value;
-        const s = document.getElementById('loginSenha').value;
+        const e = document.getElementById('loginEmail').value, s = document.getElementById('loginSenha').value;
         if(!e || !s) return alert("Preencha e-mail e senha!");
         signInWithEmailAndPassword(auth, e, s).catch(err => alert("Erro: " + err.message));
     };
 
     window.btnCadastrar = () => {
-        const nome = document.getElementById('regNome').value;
-        const e = document.getElementById('regEmail').value;
-        const s = document.getElementById('regSenha').value;
-        if(!nome) return alert("Diga seu apelido!");
-        createUserWithEmailAndPassword(auth, e, s).then((res) => updateProfile(res.user, { displayName: nome })).catch(err => alert("Erro: " + err.message));
+        const n = document.getElementById('regNome').value, e = document.getElementById('regEmail').value, s = document.getElementById('regSenha').value;
+        if(!n) return alert("Diga seu apelido!");
+        createUserWithEmailAndPassword(auth, e, s).then((res) => updateProfile(res.user, { displayName: n })).catch(err => alert("Erro: " + err.message));
     };
 
     window.logout = () => signOut(auth);
@@ -192,8 +187,7 @@
         }
     }
     function renderizar() {
-        const c = document.getElementById('carrinho-itens');
-        const k = Object.keys(carrinho);
+        const c = document.getElementById('carrinho-itens'), k = Object.keys(carrinho);
         c.innerHTML = k.length === 0 ? '<p style="color:#ccc; font-style:italic;">Vazio...</p>' : 
             k.map(n => `<div class="item-carrinho"><span>${carrinho[n].qtd}x ${n}</span> <button onclick="remover('${n}')" style="background:#ff7675; color:white; border:none; border-radius:5px; padding:2px 8px; cursor:pointer;">X</button></div>`).join('');
         document.getElementById('total-valor').innerText = total.toFixed(2);
@@ -203,8 +197,7 @@
         const pg = document.getElementById('forma-pagamento').value;
         if(!pg) return alert("Escolha o pagamento!");
         if(total <= 0) return alert("Carrinho vazio!");
-        const pid = Math.random().toString(36).substring(2, 6).toUpperCase();
-        const u = window.auth.currentUser;
+        const pid = Math.random().toString(36).substring(2, 6).toUpperCase(), u = window.auth.currentUser;
 
         try {
             await window.addDoc(window.collection(window.db, "pedidos"), {
@@ -218,7 +211,7 @@
 
             let m = `*NOVO PEDIDO DA TIA* 🧁✨\n--------------------------------\n🆔 *#${pid}*\n👤 *CLIENTE:* ${u.displayName}\n--------------------------------\n\n*ITENS:*\n`;
             Object.keys(carrinho).forEach(n => m += `🔹 *${carrinho[n].qtd}x* ${n}\n`);
-            m += `\n💰 *TOTAL:* R$ ${total.toFixed(2)}\n💳 *PGTO:* ${pg}\n--------------------------------\n_Enviando comprovante..._ 😍`;
+            m += `\n💰 *TOTAL:* R$ ${total.toFixed(2)}\n💳 *PGTO:* ${pg}\n--------------------------------\n_Obrigada pela preferência!_ 😍`;
             
             if(pg === "Pix") {
                 document.getElementById('pix-valor-total').innerText = total.toFixed(2);
@@ -227,7 +220,7 @@
                 window.msgZapTemp = m;
             } else {
                 alert("🎉 Pedido Confirmado! Abrindo WhatsApp...");
-                window.open(`https://wa.me/5511984756872?text=${encodeURIComponent(m)}`);
+                window.open(`https://wa.me/5511973019207?text=${encodeURIComponent(m)}`);
                 resetarCarrinho();
             }
         } catch (e) { alert("Erro ao processar!"); }
@@ -235,7 +228,7 @@
 
     window.fecharPix = () => {
         document.getElementById('modal-pix').style.display = 'none';
-        window.open(`https://wa.me/5511984756872?text=${encodeURIComponent(window.msgZapTemp)}`);
+        window.open(`https://wa.me/5511973019207?text=${encodeURIComponent(window.msgZapTemp)}`);
         resetarCarrinho();
     };
 
