@@ -13,13 +13,10 @@
         .btn { width: 100%; padding: 14px; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; margin-top: 10px; transition: 0.3s; }
         .btn-principal { background: var(--doce-rosa); color: white; box-shadow: 0 4px 0 #d63384; }
         .btn-whatsapp { background: var(--doce-verde); color: white; font-size: 1.1em; margin-top: 20px; }
-        
-        /* Estilo da Lista Corrida com Imagem */
         .produto { display: flex; align-items: center; gap: 15px; padding: 12px; border-bottom: 1px dashed var(--doce-rosa); }
-        .img-produto { width: 60px; height: 60px; border-radius: 12px; object-fit: cover; background: #fff0f5; border: 1px solid #ffdeeb; }
+        .img-produto { width: 65px; height: 65px; border-radius: 12px; object-fit: cover; background: #fff0f5; border: 1px solid #ffdeeb; }
         .info-produto { flex: 1; }
         .btn-add { background: var(--doce-azul); border: none; border-radius: 8px; padding: 8px 15px; cursor: pointer; font-weight: bold; }
-        
         .item-carrinho { display: flex; justify-content: space-between; font-size: 0.95em; margin-bottom: 8px; border-left: 3px solid var(--doce-rosa); padding-left: 8px; }
         .pedido-mini-card { background: #fff; padding: 12px; border-radius: 15px; margin-bottom: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
         #modal-pix { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); z-index:9999; justify-content:center; align-items:center; padding: 20px; }
@@ -55,12 +52,12 @@
             <div id="carrinho-itens"></div>
             <p style="text-align:right;"><strong>Total: R$ <span id="total-valor">0,00</span></strong></p>
             <select id="forma-pagamento">
-                <option value="" disabled selected>Como vai pagar?</option>
+                <option value="" disabled selected>Forma de Pagamento?</option>
                 <option value="Pix">Pix ⚡</option>
                 <option value="Dinheiro">Dinheiro</option>
                 <option value="Quinzena">Na Quinzena 🗓️</option>
             </select>
-            <button class="btn btn-whatsapp" onclick="enviarPedido()">Enviar Pedido no Zap 🚀</button>
+            <button class="btn btn-whatsapp" onclick="enviarPedido()">Finalizar Pedido 🚀</button>
         </div>
 
         <h3 style="margin-top:30px;">📋 Meus Pedidos</h3>
@@ -77,7 +74,7 @@
             <h3>Pagamento via Pix ⚡</h3>
             <div id="qrcode-area" style="margin:15px 0;"></div>
             <p>Total: <strong>R$ <span id="pix-valor-total">0,00</span></strong></p>
-            <button class="btn" style="background:#eee; font-size:0.8em;" onclick="copiarChave()">Copiar Chave (Celular)</button>
+            <button class="btn" style="background:#eee; font-size:0.8em;" onclick="copiarChave()">Copiar Chave (11984756872)</button>
             <button class="btn btn-principal" onclick="fecharPix()">Já paguei / Continuar ✅</button>
         </div>
     </div>
@@ -121,7 +118,6 @@
         lista.innerHTML = "";
         snap.forEach(d => {
             const p = d.data();
-            // Fallback para imagem se não houver URL no banco
             const imgUrl = p.fotoUrl || 'https://cdn-icons-png.flaticon.com/512/2553/2553713.png';
             lista.innerHTML += `
             <div class="produto">
@@ -200,7 +196,6 @@
             await window.addDoc(window.collection(window.db, "pedidos"), {
                 pedidoId: pid, cliente: u.displayName, emailCliente: u.email, total, status: "Pendente", pagamento: pg, data: new Date().toISOString(), itens: carrinho, entregue: false
             });
-            // Baixa de estoque
             for (const n in carrinho) {
                 const q = window.query(window.collection(window.db, "produtos"), window.where("nome", "==", n));
                 const s = await window.getDocs(q);
