@@ -3,111 +3,156 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Painel Admin</title>
+    <title>Painel da Tia - Gestão</title>
     <style>
-        body { font-family: sans-serif; padding: 20px; }
-        input { display: block; margin-bottom: 10px; padding: 8px; width: 100%; max-width: 300px; }
-        .item { border-bottom: 1px solid #eee; padding: 10px 0; }
-        .btn { padding: 8px; cursor: pointer; border: none; border-radius: 5px; font-weight: bold; }
-        .msg-vazia { color: #888; font-style: italic; margin-top: 10px; }
+        :root { --doce-rosa: #ff85a1; --doce-azul: #a2d2ff; --doce-verde: #25d366; --doce-laranja: #e67e22; --doce-cancel: #ff7675; }
+        body { font-family: 'Segoe UI', sans-serif; background: #fff5f8; padding: 20px; margin: 0; }
+        .admin-card { background: white; max-width: 600px; margin: auto; padding: 25px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); border: 2px solid white; }
+        .form-group { display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; padding: 15px; background: #fff9fb; border-radius: 12px; border: 1px solid #ffdeeb; }
+        input { padding: 12px; border: 1px solid #ffc1d1; border-radius: 8px; outline: none; }
+        .btn { padding: 12px; border: none; border-radius: 10px; cursor: pointer; font-weight: bold; color: white; transition: 0.3s; }
+        .item-gestao { display: flex; flex-direction: column; padding: 12px; border-bottom: 1px dashed #ff85a1; margin-bottom: 10px; background: #fff; border-radius: 8px; }
+        .pedido-card { background: #fdfdfd; border: 1px solid #eee; padding: 15px; border-radius: 12px; margin-bottom: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .status-badge { font-size: 0.7em; padding: 3px 8px; border-radius: 5px; color: white; font-weight: bold; }
     </style>
 </head>
 <body>
-    <h2>Gestão de Doces</h2>
-    <input type="text" id="nome" placeholder="Nome do Produto">
-    <input type="number" id="preco" step="0.01" placeholder="Preço">
-    <input type="number" id="estoque" placeholder="Estoque">
-    <button class="btn" style="background:#ff85a1; color:#fff;" id="btnSalvar">Salvar Produto</button>
 
-    <hr>
-    <h3>Estoque Atual</h3>
-    <div id="lista-estoque">Buscando...</div>
+<div class="admin-card" id="area-admin" style="display:none;">
+    <h1 style="color:#d63384; text-align:center;">Gestão Tia do Doce 🧁</h1>
+    
+    <div class="form-group">
+        <h3>Cadastrar Novo Doce</h3>
+        <input type="text" id="novo-nome" placeholder="Nome (Ex: KIT KAT)">
+        <input type="number" id="novo-preco" step="0.01" placeholder="Preço (R$)">
+        <input type="number" id="novo-estoque" placeholder="Qtd Inicial">
+        <button class="btn" style="background:var(--doce-rosa);" id="btnSalvar">Adicionar ao Cardápio</button>
+    </div>
 
-    <hr>
-    <h3>Pedidos Pendentes</h3>
-    <div id="lista-pedidos">Buscando...</div>
+    <h3>📦 Estoque e Ativação</h3>
+    <div id="lista-estoque">Buscando estoque...</div>
 
-    <button onclick="logout()" style="margin-top:20px;">Sair</button>
+    <hr style="margin: 30px 0; border: 0; border-top: 1px solid #eee;">
+    
+    <h3>💰 Pedidos Pendentes</h3>
+    <div id="lista-pedidos">Buscando pedidos...</div>
 
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-        import { getFirestore, collection, addDoc, updateDoc, doc, onSnapshot, getDoc, query, where } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    <button onclick="logout()" style="width:100%; margin-top:20px; background:#f0f0f0; border:none; padding:12px; border-radius:10px; cursor:pointer; font-weight:bold; color:#666;">Sair do Painel</button>
+</div>
 
-        const firebaseConfig = {
-            apiKey: "AIzaSyB6FUb-KoF6S4h-y70trrcElPb2AYuUogM",
-            authDomain: "tia-do-doce.firebaseapp.com",
-            projectId: "tia-do-doce",
-            storageBucket: "tia-do-doce.firebasestorage.app",
-            messagingSenderId: "766286783719",
-            appId: "1:766286783719:web:f49c11f7190c88cc44ae42"
-        };
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+    import { getFirestore, collection, addDoc, updateDoc, doc, onSnapshot, getDoc, query, where, orderBy } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const db = getFirestore(app);
-        const ADMINS = ["carlos.sabino@outlook.com.br", "lialmeyda@hotmail.com"];
+    const firebaseConfig = {
+        apiKey: "AIzaSyB6FUb-KoF6S4h-y70trrcElPb2AYuUogM",
+        authDomain: "tia-do-doce.firebaseapp.com",
+        projectId: "tia-do-doce",
+        storageBucket: "tia-do-doce.firebasestorage.app",
+        messagingSenderId: "766286783719",
+        appId: "1:766286783719:web:f49c11f7190c88cc44ae42"
+    };
 
-        onAuthStateChanged(auth, (u) => {
-            if (u && ADMINS.includes(u.email)) { iniciarEscutas(); } 
-            else { window.location.href = "index.html"; }
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+    const ADMINS = ["carlos.sabino@outlook.com.br", "lialmeyda@hotmail.com"];
+
+    onAuthStateChanged(auth, (u) => {
+        if (u && ADMINS.includes(u.email)) {
+            document.getElementById('area-admin').style.display = 'block';
+            iniciarEscutas();
+        } else { window.location.href = "index.html"; }
+    });
+
+    window.logout = () => signOut(auth);
+
+    function iniciarEscutas() {
+        // 1. ESCUTA DE PRODUTOS (ESTOQUE)
+        onSnapshot(collection(db, "produtos"), (snap) => {
+            const cont = document.getElementById('lista-estoque');
+            cont.innerHTML = "";
+            snap.forEach(d => {
+                const item = d.data();
+                const ativo = item.ativo !== false;
+                cont.innerHTML += `
+                    <div class="item-gestao" style="opacity: ${ativo ? '1' : '0.5'}">
+                        <div style="display:flex; justify-content:space-between; align-items:center;">
+                            <strong>${item.nome}</strong>
+                            <button class="btn" style="background:${ativo?'var(--doce-laranja)':'var(--doce-verde)'}; padding:5px 10px; font-size:0.7em;" 
+                                onclick="toggleStatus('${d.id}', ${ativo})">${ativo?'Inativar':'Ativar'}</button>
+                        </div>
+                        <div style="font-size:0.9em; color:#666;">💰 R$ ${item.preco.toFixed(2)} | 📦 Estoque: ${item.estoque}</div>
+                    </div>`;
+            });
         });
 
-        window.logout = () => signOut(auth);
+        // 2. ESCUTA DE PEDIDOS (PENDENTES) - Aqui estava o erro!
+        // Filtramos para mostrar apenas o que não foi "Finalizado" ou "Cancelado"
+        const qPedidos = query(collection(db, "pedidos"), where("status", "==", "Pendente"), orderBy("data", "desc"));
+        
+        onSnapshot(qPedidos, (snap) => {
+            const cont = document.getElementById('lista-pedidos');
+            cont.innerHTML = "";
+            
+            if(snap.empty) {
+                cont.innerHTML = "<p style='text-align:center; color:#999;'>Nenhum pedido pendente no momento. 🙌</p>";
+                return;
+            }
 
-        function iniciarEscutas() {
-            // Estoque
-            onSnapshot(collection(db, "produtos"), (snap) => {
-                const cont = document.getElementById('lista-estoque');
-                if(snap.empty) { cont.innerHTML = "<p class='msg-vazia'>Estoque vazio.</p>"; return; }
-                cont.innerHTML = "";
-                snap.forEach(d => {
-                    const i = d.data();
-                    const ativo = i.ativo !== false;
-                    cont.innerHTML += `
-                        <div class="item" style="opacity:${ativo?1:0.4}">
-                            <strong>${i.nome}</strong> - R$ ${i.preco.toFixed(2)} (${i.estoque} un)
-                            <button class="btn" style="background:${ativo?'#e67e22':'#25d366'}; color:#fff; float:right;" 
-                                onclick="toggleStatus('${d.id}', ${ativo})">${ativo?'Inativar':'Ativar'}</button>
-                        </div>`;
-                });
+            snap.forEach(d => {
+                const p = d.data();
+                const dataFormatada = p.data ? new Date(p.data.seconds * 1000).toLocaleString('pt-BR') : 'Agora';
+                
+                cont.innerHTML += `
+                    <div class="pedido-card">
+                        <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
+                            <strong>👤 ${p.cliente}</strong>
+                            <span class="status-badge" style="background:var(--doce-rosa)">PENDENTE</span>
+                        </div>
+                        <div style="font-size:0.9em; color:#555;">
+                            📝 ${p.itens.map(i => `${i.qtd}x ${i.nome}`).join(', ')}<br>
+                            📅 ${dataFormatada} | 💰 <strong>R$ ${p.total.toFixed(2)}</strong>
+                        </div>
+                        <div style="margin-top:12px; display:flex; gap:10px;">
+                            <button class="btn" style="background:var(--doce-verde); flex:1; font-size:0.8em;" onclick="atualizarStatus('${d.id}', 'Pago')">Marcar Pago</button>
+                            <button class="btn" style="background:var(--doce-cancel); flex:1; font-size:0.8em;" onclick="atualizarStatus('${d.id}', 'Cancelado')">Cancelar</button>
+                        </div>
+                    </div>`;
             });
+        });
+    }
 
-            // Pedidos
-            onSnapshot(query(collection(db, "pedidos"), where("status", "==", "Pendente")), (snap) => {
-                const cont = document.getElementById('lista-pedidos');
-                if(snap.empty) { cont.innerHTML = "<p class='msg-vazia'>Nenhum pedido pendente. 🙌</p>"; return; }
-                cont.innerHTML = "";
-                snap.forEach(d => {
-                    const p = d.data();
-                    cont.innerHTML += `
-                        <div class="item">
-                            👤 ${p.cliente} | 💰 R$ ${p.total.toFixed(2)}<br>
-                            <button class="btn" style="background:#25d366; color:#fff;" onclick="updateStatus('${d.id}', 'Pago')">Pago</button>
-                            <button class="btn" style="background:#ff7675; color:#fff;" onclick="updateStatus('${d.id}', 'Cancelado')">X</button>
-                        </div>`;
-                });
-            });
+    // FUNÇÕES DE STATUS
+    window.toggleStatus = async (id, s) => { await updateDoc(doc(db, "produtos", id), { ativo: !s }); };
+    
+    window.atualizarStatus = async (id, novoStatus) => {
+        if(confirm(`Deseja marcar este pedido como ${novoStatus}?`)) {
+            await updateDoc(doc(db, "pedidos", id), { status: novoStatus });
         }
+    };
 
-        window.toggleStatus = async (id, s) => { await updateDoc(doc(db, "produtos", id), { ativo: !s }); };
-        window.updateStatus = async (id, s) => { await updateDoc(doc(db, "pedidos", id), { status: s }); };
+    // FUNÇÃO DE SALVAR NOVO DOCE
+    document.getElementById('btnSalvar').onclick = async () => {
+        const n = document.getElementById('novo-nome').value.toUpperCase().trim();
+        const p = parseFloat(document.getElementById('novo-preco').value);
+        const e = parseInt(document.getElementById('novo-estoque').value);
 
-        document.getElementById('btnSalvar').onclick = async () => {
-            const n = document.getElementById('nome').value.toUpperCase().trim();
-            const p = parseFloat(document.getElementById('preco').value);
-            const e = parseInt(document.getElementById('estoque').value);
-            if(!n || isNaN(p)) return alert("Preencha Nome e Preço!");
+        if(!n || isNaN(p)) return alert("Preencha Nome e Preço!");
 
-            const refFoto = await getDoc(doc(db, "config_fotos", n));
-            const ext = refFoto.exists() ? refFoto.data().ext : ".webp";
-            const arquivo = n.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, '') + ext;
-           
+        const refFoto = await getDoc(doc(db, "config_fotos", n));
+        const ext = refFoto.exists() ? refFoto.data().ext : ".webp";
+        const arquivo = n.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, '') + ext;
 
-            await addDoc(collection(db, "produtos"), { nome: n, preco: p, estoque: e || 0, fotoUrl: arquivo, ativo: true });
-            alert("Salvo!");
-        };
-        window.db = db;
-    </script>
+        await addDoc(collection(db, "produtos"), { nome: n, preco: p, estoque: e || 0, fotoUrl: arquivo, ativo: true });
+        alert("Cadastrado com sucesso!");
+        document.getElementById('novo-nome').value = "";
+        document.getElementById('novo-preco').value = "";
+        document.getElementById('novo-estoque').value = "";
+    };
+
+    window.db = db;
+</script>
 </body>
 </html>
