@@ -99,7 +99,19 @@
     const auth = getAuth(app);
     const db = getFirestore(app);
     const ADMINS = ["carlos.sabino@outlook.com.br", "lialmeyda@hotmail.com"];
+    const labelStatus = ped.entregue ? "ENTREGUE ✅" : ped.status.toUpperCase();
+    const corStatus = isCancelado ? '#aaa' : (ped.entregue ? 'var(--doce-verde)' : 'var(--doce-rosa)');
 
+    cont.innerHTML += `
+    <div class="pedido-mini-card" style="border-left: 5px solid ${corStatus}">
+        <div style="display:flex; justify-content:space-between; font-size:0.8em;">
+            <strong>#${ped.pedidoId}</strong>
+            <b style="color:${corStatus}">${labelStatus}</b>
+        </div>
+        <div style="font-size:0.75em; color:#666; margin:5px 0;">📝 ${txtItensCli}</div>
+        <div style="font-size:0.85em;">Total: R$ ${ped.total.toFixed(2)}</div>
+    </div>`;
+    
     onAuthStateChanged(auth, (user) => {
         if (user) {
             document.getElementById('sessao-auth').style.display = 'none';
