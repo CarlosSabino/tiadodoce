@@ -41,12 +41,17 @@
     <h3>💰 Pedidos Pendentes</h3>
     <div id="lista-pedidos" class="msg-vazia">Carregando pedidos...</div>
 
+    <hr style="margin: 30px 0; border: 0; border-top: 1px solid #eee;">
+
+    <h3>📜 Histórico de Pedidos</h3>
+    <div id="lista-historico" class="msg-vazia">Carregando histórico...</div>
+
     <button onclick="logout()" style="width:100%; margin-top:20px; background:#f0f0f0; border:none; padding:12px; border-radius:10px; cursor:pointer; font-weight:bold; color:#666;">Sair do Painel</button>
 </div>
 
 <div id="modal-extrato">
     <div class="admin-card" style="max-height: 80vh; overflow-y: auto;">
-        <h3>📋 Extrato Quinzenal</h3>
+        <h3>📋 Extrato de Devedores</h3>
         <div id="conteudo-extrato"></div>
         <button class="btn" style="background:#666; width:100%; margin-top:15px;" onclick="document.getElementById('modal-extrato').style.display='none'">Fechar</button>
     </div>
@@ -55,7 +60,7 @@
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-    import { getFirestore, collection, addDoc, updateDoc, doc, onSnapshot, getDoc, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    import { getFirestore, collection, addDoc, updateDoc, doc, onSnapshot, getDoc, query, where, getDocs, orderBy, limit } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
     const firebaseConfig = {
         apiKey: "AIzaSyB6FUb-KoF6S4h-y70trrcElPb2AYuUogM",
@@ -81,6 +86,7 @@
     window.logout = () => signOut(auth);
 
     function iniciarEscutas() {
+        // 1. ESTOQUE
         onSnapshot(collection(db, "produtos"), (snap) => {
             const cont = document.getElementById('lista-estoque');
             if (snap.empty) { cont.innerHTML = "<p class='msg-vazia'>Nenhum produto cadastrado.</p>"; return; }
@@ -103,25 +109,22 @@
             });
         });
 
-        const qPedidos = query(collection(db, "pedidos"), where("status", "==", "Pendente"));
-        onSnapshot(qPedidos, (snap) => {
+        // 2. PEDIDOS PENDENTES
+        const qPendentes = query(collection(db, "pedidos"), where("status", "==", "Pendente"));
+        onSnapshot(qPendentes, (snap) => {
             const cont = document.getElementById('lista-pedidos');
             if (snap.empty) { cont.innerHTML = "<p class='msg-vazia'>Não há pedidos pendentes. 🙌</p>"; return; }
             cont.innerHTML = "";
             snap.forEach(d => {
                 const p = d.data();
                 let txtItens = p.itens ? Object.keys(p.itens).map(n => `${p.itens[n].qtd}x ${n}`).join(', ') : '...';
-                
                 cont.innerHTML += `
                     <div class="pedido-card">
                         <div style="display:flex; justify-content:space-between;">
                             <strong>👤 ${p.cliente || 'Anônimo'}</strong>
                             <span style="font-size:0.7em; color:var(--doce-rosa); font-weight:bold;">${p.entregue ? '✅ ENTREGUE' : '⏳ PENDENTE'}</span>
                         </div>
-                        <div style="font-size:0.85em; color:#555; margin:8px 0;">
-                            📝 ${txtItens}<br>
-                            💰 <strong>Total: R$ ${(p.total || 0).toFixed(2)}</strong>
-                        </div>
+                        <div style="font-size:0.85em; color:#555; margin:8px 0;">📝 ${txtItens} | 💰 <strong>R$ ${(p.total || 0).toFixed(2)}</strong></div>
                         <div style="display:flex; gap:5px; flex-wrap:wrap;">
                             <button class="btn" style="background:var(--doce-azul); flex:1; font-size:0.75em;" onclick="atualizarPedido('${d.id}', {entregue: true})">Entregue ✅</button>
                             <button class="btn" style="background:var(--doce-verde); flex:1; font-size:0.75em;" onclick="atualizarPedido('${d.id}', {status: 'Pago'})">Pago 💰</button>
@@ -130,17 +133,36 @@
                     </div>`;
             });
         });
+
+        // 3. HISTÓRICO (PAGOS E CANCELADOS) - RESTAURADO!
+        const qHistorico = query(collection(db, "pedidos"), where("status", "!=", "Pendente"), limit(10));
+        onSnapshot(qHistorico, (snap) => {
+            const cont = document.getElementById('lista-historico');
+            if (snap.empty) { cont.innerHTML = "<p class='msg-vazia'>Nenhum pedido no histórico ainda. 🍪</p>"; return; }
+            cont.innerHTML = "";
+            snap.forEach(d => {
+                const p = d.data();
+                const corStatus = p.status === "Pago" ? "var(--doce-verde)" : "var(--doce-cancel)";
+                cont.innerHTML += `
+                    <div class="pedido-card" style="opacity: 0.8; border-left: 5px solid ${corStatus}">
+                        <div style="display:flex; justify-content:space-between; font-size:0.85em;">
+                            <span>👤 ${p.cliente}</span>
+                            <strong style="color:${corStatus}">${p.status.toUpperCase()}</strong>
+                        </div>
+                        <div style="font-size:0.8em; color:#777;">💰 R$ ${(p.total || 0).toFixed(2)} | Pgto: ${p.pagamento || '-'}</div>
+                    </div>`;
+            });
+        });
     }
 
+    // FUNÇÕES AUXILIARES
     window.atualizarCampo = async (id, campo, valor) => {
         const v = parseFloat(valor);
         if (!isNaN(v)) { const obj = {}; obj[campo] = v; await updateDoc(doc(db, "produtos", id), obj); }
     };
-
     window.toggleStatus = async (id, s) => { await updateDoc(doc(db, "produtos", id), { ativo: !s }); };
-    
     window.atualizarPedido = async (id, dados) => {
-        if(confirm("Confirmar alteração no pedido?")) { await updateDoc(doc(db, "pedidos", id), dados); }
+        if(confirm("Confirmar alteração?")) { await updateDoc(doc(db, "pedidos", id), dados); }
     };
 
     window.gerarExtrato = async () => {
@@ -151,7 +173,6 @@
             if(!devedores[p.cliente]) devedores[p.cliente] = 0;
             devedores[p.cliente] += p.total;
         });
-
         let html = "";
         for (let nome in devedores) {
             html += `<div style="display:flex; justify-content:space-between; padding:10px; border-bottom:1px solid #eee;">
@@ -172,9 +193,7 @@
         const arquivo = n.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, '') + ext;
         await addDoc(collection(db, "produtos"), { nome: n, preco: p, estoque: e || 0, fotoUrl: arquivo, ativo: true });
         alert("Cadastrado!");
-        document.getElementById('novo-nome').value = ""; document.getElementById('novo-preco').value = ""; document.getElementById('novo-estoque').value = "";
     };
-
     window.db = db;
 </script>
 </body>
