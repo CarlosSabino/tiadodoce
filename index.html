@@ -113,26 +113,19 @@
     });
 
     async function carregarProdutos() {
-    const snap = await getDocs(collection(db, "produtos"));
+    // Filtra apenas produtos onde 'ativo' não é false
+    const q = query(collection(db, "produtos"), where("ativo", "!=", false));
+    const snap = await getDocs(q);
     const lista = document.getElementById('lista-produtos');
     lista.innerHTML = "";
     
-    // Altere para o seu link do GitHub Pages (ex: https://carlão.github.io/projeto/ )
-    const CAMINHO_GIT = "./"; 
-
     snap.forEach(d => {
         const p = d.data();
+        const imgUrl = p.fotoUrl || 'https://cdn-icons-png.flaticon.com/512/2553/2553713.png';
         
-        // Se a foto não tiver http (for só o nome do arquivo), ele monta o caminho do Git
-        const imgUrl = (p.fotoUrl && p.fotoUrl.startsWith('http')) 
-            ? p.fotoUrl 
-            : CAMINHO_GIT + p.fotoUrl;
-
         lista.innerHTML += `
         <div class="produto">
-            <img src="${imgUrl}" class="img-produto" 
-                 onerror="this.src='https://cdn-icons-png.flaticon.com/512/2553/2553713.png'" 
-                 alt="${p.nome}">
+            <img src="${imgUrl}" class="img-produto" onerror="this.src='https://cdn-icons-png.flaticon.com/512/2553/2553713.png'">
             <div class="info-produto">
                 <strong>${p.nome}</strong><br>
                 <span style="color:var(--doce-rosa); font-weight:bold;">R$ ${p.preco.toFixed(2)}</span>
