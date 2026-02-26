@@ -42,7 +42,7 @@
     <div id="lista-pedidos" class="msg-vazia">Carregando pedidos...</div>
 
     <hr style="margin: 30px 0; border: 0; border-top: 1px solid #eee;">
-    <h3>📜 Histórico Recente</h3>
+    <h3>📜 Histórico Recente (Últimos 10)</h3>
     <div id="lista-historico" class="msg-vazia">Carregando histórico...</div>
 
     <button onclick="logout()" style="width:100%; margin-top:20px; background:#f0f0f0; border:none; padding:12px; border-radius:10px; cursor:pointer; font-weight:bold; color:#666;">Sair do Painel</button>
@@ -129,18 +129,22 @@
             });
         });
 
-        // HISTÓRICO
+        // HISTÓRICO COM ITENS RESTAURADOS
         onSnapshot(query(collection(db, "pedidos"), where("status", "!=", "Pendente"), limit(10)), (snap) => {
             const cont = document.getElementById('lista-historico');
             cont.innerHTML = snap.empty ? "<p class='msg-vazia'>Sem registros.</p>" : "";
             snap.forEach(d => {
                 const p = d.data();
                 const cor = p.status === "Pago" ? "var(--doce-verde)" : "var(--doce-cancel)";
+                const itensHist = p.itens ? Object.keys(p.itens).map(n => `${p.itens[n].qtd}x ${n}`).join(', ') : '...';
+                
                 cont.innerHTML += `
-                    <div class="pedido-card" style="opacity: 0.7; border-left: 5px solid ${cor}">
-                        <div style="display:flex; justify-content:space-between; font-size:0.8em;">
-                            <span>${p.cliente}</span> <strong>${p.status.toUpperCase()}</strong>
+                    <div class="pedido-card" style="opacity: 0.8; border-left: 5px solid ${cor}">
+                        <div style="display:flex; justify-content:space-between; font-size:0.85em;">
+                            <span>👤 ${p.cliente}</span> <strong>${p.status.toUpperCase()}</strong>
                         </div>
+                        <div style="font-size:0.75em; color:#666; margin:5px 0;">📝 ${itensHist}</div>
+                        <div style="font-size:0.8em; color:#777;">💰 R$ ${(p.total || 0).toFixed(2)} | Pgto: ${p.pagamento || '-'}</div>
                     </div>`;
             });
         });
