@@ -166,29 +166,44 @@
     }
 
     function carregarMeusPedidos(email) {
-        const q = query(collection(db, "pedidos"), where("emailCliente", "==", email));
-        onSnapshot(q, (snap) => {
-            const cont = document.getElementById('lista-meus-pedidos');
-            cont.innerHTML = snap.empty ? '<p style="text-align:center; color:#aaa; font-size:0.8em;">Nenhum pedido realizado.</p>' : "";
-            snap.forEach((d) => {
-                const ped = d.data();
-                const isCancelado = ped.status === "Cancelado";
-                const labelStatus = ped.entregue ? "ENTREGUE ✅" : ped.status.toUpperCase();
-                const corStatus = isCancelado ? '#aaa' : (ped.entregue ? 'var(--doce-verde)' : 'var(--doce-rosa)');
-                let txtItensCli = ped.itens ? Object.keys(ped.itens).map(n => `${ped.itens[n].qtd}x ${n}`).join(', ') : '...';
-                
-                cont.innerHTML += `
-                <div class="pedido-mini-card" style="border-left: 5px solid ${corStatus}">
-                    <div style="display:flex; justify-content:space-between; font-size:0.8em;">
-                        <strong>#${ped.pedidoId}</strong>
-                        <b style="color:${corStatus}">${labelStatus}</b>
-                    </div>
-                    <div style="font-size:0.75em; color:#666; margin:5px 0;">📝 ${txtItensCli}</div>
-                    <div style="font-size:0.85em;">Total: R$ ${ped.total.toFixed(2)}</div>
-                </div>`;
-            });
+    const q = query(collection(db, "pedidos"), where("emailCliente", "==", email));
+    onSnapshot(q, (snap) => {
+        const cont = document.getElementById('lista-meus-pedidos');
+        cont.innerHTML = snap.empty ? '<p style="text-align:center; color:#aaa; font-size:0.8em;">Nenhum pedido realizado.</p>' : "";
+        snap.forEach((d) => {
+            const ped = d.data();
+            const isCancelado = ped.status === "Cancelado";
+            const isPago = ped.status === "Pago";
+            
+            // Definição de Cores Padronizada
+            let corStatus = 'var(--doce-rosa)'; // Padrão Pendente
+            if (isCancelado) corStatus = 'var(--doce-cancel)';
+            if (ped.entregue) corStatus = 'var(--doce-azul)';
+            if (isPago) corStatus = 'var(--doce-verde)';
+
+            const labelStatus = ped.entregue && !isPago ? "ENTREGUE (Pgto Pendente)" : ped.status.toUpperCase();
+            
+            // Itens com quebra de linha e marcador
+            let htmlItens = ped.itens ? Object.keys(ped.itens).map(n => 
+                `<div style="margin-left:10px;">• ${ped.itens[n].qtd}x ${n}</div>`
+            ).join('') : '...';
+            
+            cont.innerHTML += `
+            <div class="pedido-mini-card" style="border-left: 6px solid ${corStatus}; text-align:left;">
+                <div style="display:flex; justify-content:space-between; font-size:0.8em; margin-bottom:5px;">
+                    <strong>#${ped.pedidoId}</strong>
+                    <b style="color:${corStatus}">${labelStatus}</b>
+                </div>
+                <div style="font-size:0.8em; color:#555; line-height:1.4;">
+                    ${htmlItens}
+                </div>
+                <div style="font-size:0.85em; margin-top:8px; font-weight:bold; border-top:1px solid #f0f0f0; pt-5px;">
+                    Total: R$ ${ped.total.toFixed(2)}
+                </div>
+            </div>`;
         });
-    }
+    });
+}
 
     window.btnLogin = () => {
         const e = document.getElementById('loginEmail').value, s = document.getElementById('loginSenha').value;
