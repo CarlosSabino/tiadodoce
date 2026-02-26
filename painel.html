@@ -117,16 +117,23 @@
     window.logout = () => signOut(auth);
 
     function iniciarEscutas() {
+        // Na função iniciarEscutas, onde monta a lista de estoque:
         onSnapshot(collection(db, "produtos"), (snap) => {
             const cont = document.getElementById('lista-estoque');
             cont.innerHTML = "";
             snap.forEach(d => {
                 const item = d.data();
+                const estaAtivo = item.ativo !== false;
+                
                 cont.innerHTML += `
-                    <div class="item-gestao">
+                    <div class="item-gestao" style="opacity: ${estaAtivo ? '1' : '0.5'}; background: ${estaAtivo ? 'white' : '#f9f9f9'}">
                         <div class="linha-info">
-                            <strong>${item.nome}</strong>
-                            <button class="btn-mini" style="background:var(--doce-cancel); color:white;" onclick="removerDoce('${d.id}')">Excluir</button>
+                            <strong>${item.nome} ${estaAtivo ? '' : '(INATIVO)'}</strong>
+                            <button class="btn-mini" 
+                                style="background: ${estaAtivo ? 'var(--doce-laranja)' : 'var(--doce-verde)'}; color:white;" 
+                                onclick="alternarStatus('${d.id}', ${estaAtivo})">
+                                ${estaAtivo ? 'Inativar' : 'Ativar'}
+                            </button>
                         </div>
                         <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
                             <div class="controles-preco">
@@ -136,14 +143,19 @@
                             </div>
                             <div class="controles-preco">
                                 📦 Estoque: 
-                                <button class="btn-mini" style="background:#fff; border:1px solid #ddd;" onclick="ajustarEstoque('${d.id}', ${item.estoque - 1})">-</button>
-                                <span style="min-width:20px; text-align:center">${item.estoque}</span>
-                                <button class="btn-mini" style="background:#fff; border:1px solid #ddd;" onclick="ajustarEstoque('${d.id}', ${item.estoque + 1})">+</button>
+                                <button class="btn-mini" onclick="ajustarEstoque('${d.id}', ${item.estoque - 1})">-</button>
+                                <span>${item.estoque}</span>
+                                <button class="btn-mini" onclick="ajustarEstoque('${d.id}', ${item.estoque + 1})">+</button>
                             </div>
                         </div>
                     </div>`;
             });
         });
+        
+        // NOVA FUNÇÃO DE ATIVAR/INATIVAR
+        window.alternarStatus = async (id, statusAtual) => {
+            await updateDoc(doc(db, "produtos", id), { ativo: !statusAtual });
+        };
 
         onSnapshot(collection(db, "pedidos"), (snap) => {
             const cont = document.getElementById('lista-pedidos');
