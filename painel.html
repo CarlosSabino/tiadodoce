@@ -14,7 +14,8 @@
         .item-gestao { display: flex; flex-direction: column; padding: 12px; border-bottom: 1px dashed #ff85a1; margin-bottom: 10px; background: #fff; border-radius: 8px; }
         .pedido-card { background: #fdfdfd; border: 1px solid #eee; padding: 15px; border-radius: 12px; margin-bottom: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
         .status-badge { font-size: 0.7em; padding: 3px 8px; border-radius: 5px; color: white; font-weight: bold; }
-        .input-preco { width: 80px; padding: 5px; border: 1px solid #ffc1d1; border-radius: 5px; text-align: center; font-weight: bold; color: #d63384; }
+        /* Estilo dos campos editáveis */
+        .edit-field { width: 70px; padding: 5px; border: 1px solid #ffc1d1; border-radius: 5px; text-align: center; font-weight: bold; color: #d63384; background: #fffafa; }
         .msg-vazia { text-align: center; color: #999; padding: 20px; font-style: italic; }
     </style>
 </head>
@@ -31,13 +32,13 @@
         <button class="btn" style="background:var(--doce-rosa);" id="btnSalvar">Adicionar ao Cardápio</button>
     </div>
 
-    <h3>📦 Estoque e Ativação</h3>
-    <div id="lista-estoque" class="msg-vazia">Buscando estoque...</div>
+    <h3>📦 Estoque e Preços (Editável)</h3>
+    <div id="lista-estoque" class="msg-vazia">Carregando estoque...</div>
 
     <hr style="margin: 30px 0; border: 0; border-top: 1px solid #eee;">
     
     <h3>💰 Pedidos Pendentes</h3>
-    <div id="lista-pedidos" class="msg-vazia">Buscando pedidos...</div>
+    <div id="lista-pedidos" class="msg-vazia">Carregando pedidos...</div>
 
     <button onclick="logout()" style="width:100%; margin-top:20px; background:#f0f0f0; border:none; padding:12px; border-radius:10px; cursor:pointer; font-weight:bold; color:#666;">Sair do Painel</button>
 </div>
@@ -71,7 +72,7 @@
     window.logout = () => signOut(auth);
 
     function iniciarEscutas() {
-        // 1. ESCUTA DE PRODUTOS (ESTOQUE E PREÇO)
+        // 1. ESCUTA DE ESTOQUE E PREÇOS EDITÁVEIS
         onSnapshot(collection(db, "produtos"), (snap) => {
             const cont = document.getElementById('lista-estoque');
             if (snap.empty) {
@@ -89,66 +90,77 @@
                             <button class="btn" style="background:${ativo?'var(--doce-laranja)':'var(--doce-verde)'}; padding:5px 10px; font-size:0.7em;" 
                                 onclick="toggleStatus('${d.id}', ${ativo})">${ativo?'Inativar':'Ativar'}</button>
                         </div>
-                        <div style="font-size:0.9em; color:#666; margin-top:8px; display:flex; align-items:center; gap:10px;">
-                            💰 R$ <input type="number" step="0.01" class="input-preco" value="${item.preco.toFixed(2)}" 
-                                    onchange="alterarPreco('${d.id}', this.value)">
-                            | 📦 Estoque: ${item.estoque}
+                        <div style="font-size:0.85em; color:#666; margin-top:8px; display:flex; flex-wrap:wrap; gap:10px; align-items:center;">
+                            <span>💰 R$ <input type="number" step="0.01" class="edit-field" value="${(item.preco || 0).toFixed(2)}" 
+                                onchange="atualizarCampo('${d.id}', 'preco', this.value)"></span>
+                            <span>📦 Qtd: <input type="number" class="edit-field" value="${item.estoque || 0}" 
+                                onchange="atualizarCampo('${d.id}', 'estoque', this.value)"></span>
                         </div>
                     </div>`;
             });
         });
 
-        // 2. ESCUTA DE PEDIDOS (PENDENTES)
-        const qPedidos = query(collection(db, "pedidos"), where("status", "==", "Pendente"), orderBy("data", "desc"));
+        // 2. ESCUTA DE PEDIDOS (RESILIENTE)
+        // Removi o orderBy temporariamente para evitar erro se o campo 'data' estiver em formato diferente
+        const qPedidos = query(collection(db, "pedidos"), where("status", "==", "Pendente"));
         
         onSnapshot(qPedidos, (snap) => {
             const cont = document.getElementById('lista-pedidos');
             if (snap.empty) {
-                cont.innerHTML = "<p class='msg-vazia'>Não há pedidos pendentes no momento. 🙌</p>";
+                cont.innerHTML = "<p class='msg-vazia'>Não há pedidos pendentes. 🙌</p>";
                 return;
             }
             cont.innerHTML = "";
             snap.forEach(d => {
                 const p = d.data();
-                const dataFormatada = p.data ? new Date(p.data).toLocaleString('pt-BR') : 'Agora';
+                // Tenta formatar a lista de itens independente de como foi salva
+                let txtItens = "";
+                if (p.itens && typeof p.itens === 'object') {
+                    txtItens = Object.keys(p.itens).map(n => `${p.itens[n].qtd}x ${n}`).join(', ');
+                }
                 
                 cont.innerHTML += `
                     <div class="pedido-card">
                         <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
-                            <strong>👤 ${p.cliente}</strong>
+                            <strong>👤 ${p.cliente || 'Anônimo'}</strong>
                             <span class="status-badge" style="background:var(--doce-rosa)">PENDENTE</span>
                         </div>
                         <div style="font-size:0.9em; color:#555;">
-                            📝 ${Object.keys(p.itens).map(n => `${p.itens[n].qtd}x ${n}`).join(', ')}<br>
-                            📅 ${dataFormatada} | 💰 <strong>R$ ${p.total.toFixed(2)}</strong>
+                            📝 ${txtItens || 'Itens não detalhados'}<br>
+                            💰 <strong>Total: R$ ${(p.total || 0).toFixed(2)}</strong>
                         </div>
                         <div style="margin-top:12px; display:flex; gap:10px;">
-                            <button class="btn" style="background:var(--doce-verde); flex:1; font-size:0.8em;" onclick="atualizarStatus('${d.id}', 'Pago')">Marcar Pago</button>
-                            <button class="btn" style="background:var(--doce-cancel); flex:1; font-size:0.8em;" onclick="atualizarStatus('${d.id}', 'Cancelado')">Cancelar</button>
+                            <button class="btn" style="background:var(--doce-verde); flex:1; font-size:0.8em;" onclick="mudarStatusPedido('${d.id}', 'Pago')">Pago</button>
+                            <button class="btn" style="background:var(--doce-cancel); flex:1; font-size:0.8em;" onclick="mudarStatusPedido('${d.id}', 'Cancelado')">X</button>
                         </div>
                     </div>`;
             });
+        }, (error) => {
+            console.error("Erro na escuta de pedidos:", error);
+            document.getElementById('lista-pedidos').innerHTML = "<p class='msg-vazia'>Erro ao carregar pedidos.</p>";
         });
     }
 
-    // FUNÇÕES DE ATUALIZAÇÃO
-    window.toggleStatus = async (id, s) => { await updateDoc(doc(db, "produtos", id), { ativo: !s }); };
-    
-    window.alterarPreco = async (id, novoPreco) => {
-        const p = parseFloat(novoPreco);
-        if (!isNaN(p)) {
-            await updateDoc(doc(db, "produtos", id), { preco: p });
-            console.log("Preço atualizado!");
+    // --- FUNÇÕES DE ATUALIZAÇÃO DIRETA ---
+
+    window.atualizarCampo = async (id, campo, valor) => {
+        const v = parseFloat(valor);
+        if (!isNaN(v)) {
+            const obj = {};
+            obj[campo] = v;
+            await updateDoc(doc(db, "produtos", id), obj);
+            console.log(`${campo} atualizado para ${v}`);
         }
     };
 
-    window.atualizarStatus = async (id, novoStatus) => {
-        if(confirm(`Deseja marcar este pedido como ${novoStatus}?`)) {
+    window.toggleStatus = async (id, s) => { await updateDoc(doc(db, "produtos", id), { ativo: !s }); };
+    
+    window.mudarStatusPedido = async (id, novoStatus) => {
+        if(confirm(`Mudar pedido para ${novoStatus}?`)) {
             await updateDoc(doc(db, "pedidos", id), { status: novoStatus });
         }
     };
 
-    // FUNÇÃO DE SALVAR NOVO DOCE
     document.getElementById('btnSalvar').onclick = async () => {
         const n = document.getElementById('novo-nome').value.toUpperCase().trim();
         const p = parseFloat(document.getElementById('novo-preco').value);
@@ -161,7 +173,7 @@
         const arquivo = n.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, '') + ext;
 
         await addDoc(collection(db, "produtos"), { nome: n, preco: p, estoque: e || 0, fotoUrl: arquivo, ativo: true });
-        alert("Cadastrado com sucesso!");
+        alert("Cadastrado!");
         document.getElementById('novo-nome').value = "";
         document.getElementById('novo-preco').value = "";
         document.getElementById('novo-estoque').value = "";
