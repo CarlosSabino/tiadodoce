@@ -106,45 +106,56 @@
             });
         });
 
-        // PENDENTES
+        // PENDENTES (CORES: ROSA PARA AGUARDANDO, AZUL PARA ENTREGUE)
         onSnapshot(query(collection(db, "pedidos"), where("status", "==", "Pendente")), (snap) => {
             const cont = document.getElementById('lista-pedidos');
             cont.innerHTML = snap.empty ? "<p class='msg-vazia'>Tudo em dia! 🙌</p>" : "";
             snap.forEach(d => {
                 const p = d.data();
-                const itens = p.itens ? Object.keys(p.itens).map(n => `${p.itens[n].qtd}x ${n}`).join(', ') : '...';
+                const corStatus = p.entregue ? 'var(--doce-azul)' : 'var(--doce-rosa)';
+                
+                // Quebra de linha nos itens
+                const itensFormatados = p.itens ? Object.keys(p.itens).map(n => `<div style="padding-left:10px;">• ${p.itens[n].qtd}x ${n}</div>`).join('') : '...';
+                
                 cont.innerHTML += `
-                    <div class="pedido-card">
+                    <div class="pedido-card" style="border-left: 6px solid ${corStatus}">
                         <div style="display:flex; justify-content:space-between; font-size:0.9em;">
                             <strong>👤 ${p.cliente}</strong>
-                            <span style="color:var(--doce-rosa); font-weight:bold;">${p.entregue ? '✅ ENTREGUE' : '⏳ PENDENTE'}</span>
+                            <span style="color:${corStatus}; font-weight:bold;">${p.entregue ? 'ENTREGUE ✅' : 'AGUARDANDO ⏳'}</span>
                         </div>
-                        <p style="font-size:0.8em; color:#666; margin:5px 0;">📝 ${itens}<br>💰 R$ ${p.total.toFixed(2)} (${p.pagamento})</p>
+                        <div style="font-size:0.85em; color:#444; margin:8px 0; line-height:1.4;">
+                            ${itensFormatados}
+                        </div>
+                        <div style="font-size:0.9em; margin-bottom:10px;">
+                            💰 <strong>Total: R$ ${p.total.toFixed(2)}</strong> <small>(${p.pagamento})</small>
+                        </div>
                         <div style="display:flex; gap:5px;">
-                            <button class="btn" style="background:var(--doce-azul); flex:1; font-size:0.7em;" onclick="atualizarPedido('${d.id}', {entregue: true})">Entregar ✅</button>
-                            <button class="btn" style="background:var(--doce-verde); flex:1; font-size:0.7em;" onclick="atualizarPedido('${d.id}', {status: 'Pago'})">Pago 💰</button>
+                            <button class="btn" style="background:var(--doce-azul); flex:1; font-size:0.7em;" onclick="atualizarPedido('${d.id}', {entregue: true})">Entregar</button>
+                            <button class="btn" style="background:var(--doce-verde); flex:1; font-size:0.7em;" onclick="atualizarPedido('${d.id}', {status: 'Pago'})">Pago</button>
                             <button class="btn" style="background:var(--doce-cancel); flex:1; font-size:0.7em;" onclick="atualizarPedido('${d.id}', {status: 'Cancelado'})">Cancelar</button>
                         </div>
                     </div>`;
             });
         });
 
-        // HISTÓRICO COM ITENS RESTAURADOS
+        // HISTÓRICO (VERDE PARA PAGO, VERMELHO PARA CANCELADO)
         onSnapshot(query(collection(db, "pedidos"), where("status", "!=", "Pendente"), limit(10)), (snap) => {
             const cont = document.getElementById('lista-historico');
             cont.innerHTML = snap.empty ? "<p class='msg-vazia'>Sem registros.</p>" : "";
             snap.forEach(d => {
                 const p = d.data();
                 const cor = p.status === "Pago" ? "var(--doce-verde)" : "var(--doce-cancel)";
-                const itensHist = p.itens ? Object.keys(p.itens).map(n => `${p.itens[n].qtd}x ${n}`).join(', ') : '...';
+                const itensHist = p.itens ? Object.keys(p.itens).map(n => `<div>• ${p.itens[n].qtd}x ${n}</div>`).join('') : '...';
                 
                 cont.innerHTML += `
-                    <div class="pedido-card" style="opacity: 0.8; border-left: 5px solid ${cor}">
+                    <div class="pedido-card" style="opacity: 0.8; border-left: 6px solid ${cor}">
                         <div style="display:flex; justify-content:space-between; font-size:0.85em;">
-                            <span>👤 ${p.cliente}</span> <strong>${p.status.toUpperCase()}</strong>
+                            <strong>👤 ${p.cliente}</strong> <strong style="color:${cor}">${p.status.toUpperCase()}</strong>
                         </div>
-                        <div style="font-size:0.75em; color:#666; margin:5px 0;">📝 ${itensHist}</div>
-                        <div style="font-size:0.8em; color:#777;">💰 R$ ${(p.total || 0).toFixed(2)} | Pgto: ${p.pagamento || '-'}</div>
+                        <div style="font-size:0.75em; color:#666; margin:5px 0; line-height:1.3;">
+                            ${itensHist}
+                        </div>
+                        <div style="font-size:0.8em; color:#333; font-weight:bold;">Total: R$ ${(p.total || 0).toFixed(2)}</div>
                     </div>`;
             });
         });
@@ -158,7 +169,7 @@
     window.toggleStatus = async (id, s) => await updateDoc(doc(db, "produtos", id), { ativo: !s });
     
     window.atualizarPedido = async (id, dados) => {
-        if(confirm("Confirmar alteração?")) await updateDoc(doc(db, "pedidos", id), dados);
+        if(confirm("Confirmar alteração no pedido?")) await updateDoc(doc(db, "pedidos", id), dados);
     };
 
     window.gerarExtrato = async () => {
@@ -183,6 +194,7 @@
         const arquivo = n.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, '') + (ref.exists() ? ref.data().ext : ".webp");
         await addDoc(collection(db, "produtos"), { nome: n, preco: p, estoque: e || 0, fotoUrl: arquivo, ativo: true });
         alert("Salvo!");
+        document.getElementById('novo-nome').value = ""; document.getElementById('novo-preco').value = ""; document.getElementById('novo-estoque').value = "";
     };
     window.db = db;
 </script>
