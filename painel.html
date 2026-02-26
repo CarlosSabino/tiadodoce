@@ -5,51 +5,45 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Painel da Tia - Gestão</title>
     <style>
-        :root { --doce-rosa: #ff85a1; --doce-azul: #a2d2ff; --doce-verde: #25d366; --doce-laranja: #e67e22; --doce-cancel: #ff7675; }
-        body { font-family: 'Segoe UI', sans-serif; background: #fff5f8; padding: 20px; margin: 0; }
-        .admin-card { background: white; max-width: 600px; margin: auto; padding: 25px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); border: 2px solid white; }
-        .form-group { display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; padding: 15px; background: #fff9fb; border-radius: 12px; border: 1px solid #ffdeeb; }
-        input { padding: 12px; border: 1px solid #ffc1d1; border-radius: 8px; outline: none; }
-        .btn { padding: 12px; border: none; border-radius: 10px; cursor: pointer; font-weight: bold; color: white; transition: 0.3s; }
-        .item-gestao { display: flex; flex-direction: column; padding: 12px; border-bottom: 1px dashed #ff85a1; margin-bottom: 10px; background: #fff; border-radius: 8px; }
-        .pedido-card { background: #fdfdfd; border: 1px solid #eee; padding: 15px; border-radius: 12px; margin-bottom: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        :root { --doce-rosa: #ff85a1; --doce-verde: #25d366; --doce-laranja: #e67e22; --doce-cancel: #ff7675; }
+        body { font-family: 'Segoe UI', sans-serif; background: #fff5f8; padding: 20px; }
+        .admin-card { background: white; max-width: 600px; margin: auto; padding: 25px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
+        .form-group { display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px; padding: 15px; background: #fff9fb; border-radius: 12px; }
+        input { padding: 12px; border: 1px solid #ffc1d1; border-radius: 8px; }
+        .btn { padding: 12px; border: none; border-radius: 10px; cursor: pointer; font-weight: bold; color: white; }
+        .item-gestao { display: flex; flex-direction: column; padding: 12px; border-bottom: 1px dashed #ff85a1; margin-bottom: 10px; }
         .msg-vazia { text-align: center; color: #999; padding: 20px; font-style: italic; }
-        .link-apoio { text-align: center; margin-top: 15px; }
-        .link-apoio a { color: var(--doce-rosa); font-size: 0.85em; text-decoration: none; font-weight: bold; }
+        .pedido-card { background: #fdfdfd; border: 1px solid #eee; padding: 15px; border-radius: 12px; margin-bottom: 15px; }
     </style>
 </head>
 <body>
 
 <div class="admin-card" id="area-admin" style="display:none;">
-    <h1 style="color:#d63384; text-align:center;">Gestão Tia do Doce 🧁</h1>
+    <h1 style="color:#d63384; text-align:center;">Gestão 🛠️</h1>
     
     <div class="form-group">
-        <h3>Cadastrar Novo Doce</h3>
-        <input type="text" id="novo-nome" placeholder="Nome (Ex: KIT KAT)">
+        <h3>Cadastrar Doce</h3>
+        <input type="text" id="novo-nome" placeholder="Nome do Doce">
         <input type="number" id="novo-preco" step="0.01" placeholder="Preço (R$)">
-        <input type="number" id="novo-estoque" placeholder="Qtd Inicial">
-        <button class="btn" style="background:var(--doce-rosa);" id="btnSalvar">Adicionar ao Cardápio</button>
+        <input type="number" id="novo-estoque" placeholder="Estoque Inicial">
+        <button class="btn" style="background:var(--doce-rosa);" id="btnSalvar">Adicionar</button>
     </div>
 
-    <h3>📦 Estoque e Ativação</h3>
+    <h3>📦 Estoque</h3>
     <div id="lista-estoque" class="msg-vazia">Buscando estoque...</div>
 
-    <hr style="margin: 30px 0; border: 0; border-top: 1px solid #eee;">
+    <hr style="margin: 30px 0; border: 1px solid #eee;">
     
     <h3>💰 Pedidos Pendentes</h3>
     <div id="lista-pedidos" class="msg-vazia">Buscando pedidos...</div>
 
-    <div class="link-apoio">
-        <a href="#" onclick="recuperarSenha()">Esqueci minha senha</a>
-    </div>
-
-    <button onclick="logout()" style="width:100%; margin-top:20px; background:#f0f0f0; border:none; padding:12px; border-radius:10px; cursor:pointer; font-weight:bold; color:#666;">Sair do Painel</button>
+    <button onclick="logout()" style="width:100%; margin-top:20px; background:#f0f0f0; border:none; padding:12px; border-radius:10px; cursor:pointer; color:#666;">Sair</button>
 </div>
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getAuth, onAuthStateChanged, signOut, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-    import { getFirestore, collection, addDoc, updateDoc, doc, onSnapshot, getDoc, query, where, orderBy } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+    import { getFirestore, collection, addDoc, updateDoc, doc, onSnapshot, getDoc, query, where } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
     const firebaseConfig = {
         apiKey: "AIzaSyB6FUb-KoF6S4h-y70trrcElPb2AYuUogM",
@@ -74,26 +68,10 @@
 
     window.logout = () => signOut(auth);
 
-    // FUNÇÃO ESQUECI MINHA SENHA
-    window.recuperarSenha = async () => {
-        const email = prompt("Digite seu e-mail para receber o link de redefinição:");
-        if (!email) return;
-        try {
-            await sendPasswordResetEmail(auth, email);
-            alert("📧 Link de redefinição enviado! Verifique seu e-mail.");
-        } catch (e) {
-            alert("Erro: Verifique se o e-mail está correto.");
-        }
-    };
-
     function iniciarEscutas() {
-        // 1. ESCUTA DE ESTOQUE COM TRATAMENTO DE LISTA VAZIA
         onSnapshot(collection(db, "produtos"), (snap) => {
             const cont = document.getElementById('lista-estoque');
-            if (snap.empty) {
-                cont.innerHTML = "<div class='msg-vazia'>Nenhum produto cadastrado.</div>";
-                return;
-            }
+            if(snap.empty) { cont.innerHTML = "<div class='msg-vazia'>Nenhum produto cadastrado.</div>"; return; }
             cont.innerHTML = "";
             snap.forEach(d => {
                 const item = d.data();
@@ -102,7 +80,7 @@
                     <div class="item-gestao" style="opacity: ${ativo ? '1' : '0.5'}">
                         <div style="display:flex; justify-content:space-between; align-items:center;">
                             <strong>${item.nome}</strong>
-                            <button class="btn" style="background:${ativo?'var(--doce-laranja)':'var(--doce-verde)'}; padding:5px 10px; font-size:0.7em;" 
+                            <button class="btn" style="background:${ativo?'var(--doce-laranja)':'var(--doce-verde)'}; padding:5px 10px; font-size:0.75em;" 
                                 onclick="toggleStatus('${d.id}', ${ativo})">${ativo?'Inativar':'Ativar'}</button>
                         </div>
                         <div style="font-size:0.9em; color:#666;">💰 R$ ${item.preco.toFixed(2)} | 📦 Estoque: ${item.estoque}</div>
@@ -110,28 +88,19 @@
             });
         });
 
-        // 2. ESCUTA DE PEDIDOS COM TRATAMENTO DE LISTA VAZIA
         const qPedidos = query(collection(db, "pedidos"), where("status", "==", "Pendente"));
         onSnapshot(qPedidos, (snap) => {
             const cont = document.getElementById('lista-pedidos');
-            if (snap.empty) {
-                cont.innerHTML = "<div class='msg-vazia'>Não há nenhum pedido pendente. 🙌</div>";
-                return;
-            }
+            if(snap.empty) { cont.innerHTML = "<div class='msg-vazia'>Não há pedidos pendentes. 🙌</div>"; return; }
             cont.innerHTML = "";
             snap.forEach(d => {
                 const p = d.data();
                 cont.innerHTML += `
                     <div class="pedido-card">
-                        <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
-                            <strong>👤 ${p.cliente}</strong>
-                            <span style="font-size:0.8em; color:var(--doce-rosa); font-weight:bold;">PENDENTE</span>
-                        </div>
-                        <div style="font-size:0.9em; color:#555;">
-                            📝 ${p.itens.map(i => `${i.qtd}x ${i.nome}`).join(', ')}<br>
-                            💰 <strong>Total: R$ ${p.total.toFixed(2)}</strong>
-                        </div>
-                        <div style="margin-top:12px; display:flex; gap:10px;">
+                        <strong>👤 ${p.cliente}</strong><br>
+                        <small>📝 ${p.itens.map(i => `${i.qtd}x ${i.nome}`).join(', ')}</small><br>
+                        💰 <strong>Total: R$ ${p.total.toFixed(2)}</strong>
+                        <div style="margin-top:10px; display:flex; gap:8px;">
                             <button class="btn" style="background:var(--doce-verde); flex:1; font-size:0.8em;" onclick="atualizarStatus('${d.id}', 'Pago')">Pago</button>
                             <button class="btn" style="background:var(--doce-cancel); flex:1; font-size:0.8em;" onclick="atualizarStatus('${d.id}', 'Cancelado')">X</button>
                         </div>
@@ -148,15 +117,12 @@
         const p = parseFloat(document.getElementById('novo-preco').value);
         const e = parseInt(document.getElementById('novo-estoque').value);
         if(!n || isNaN(p)) return alert("Preencha Nome e Preço!");
-
         const refFoto = await getDoc(doc(db, "config_fotos", n));
         const ext = refFoto.exists() ? refFoto.data().ext : ".webp";
         const arquivo = n.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, '') + ext;
-
         await addDoc(collection(db, "produtos"), { nome: n, preco: p, estoque: e || 0, fotoUrl: arquivo, ativo: true });
         alert("Cadastrado!");
     };
-
     window.db = db;
 </script>
 </body>
