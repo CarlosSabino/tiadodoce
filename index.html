@@ -3,47 +3,86 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Painel da Tia - Gestão</title>
+    <title>Tia do Doce - Cardápio</title>
     <style>
         :root { --doce-rosa: #ff85a1; --doce-azul: #a2d2ff; --doce-verde: #25d366; --doce-laranja: #e67e22; --doce-cancel: #ff7675; }
-        body { font-family: 'Segoe UI', sans-serif; background: #fff5f8; padding: 20px; margin: 0; }
-        .admin-card { background: white; max-width: 600px; margin: auto; padding: 25px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); border: 2px solid white; }
-        .form-group { display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; padding: 15px; background: #fff9fb; border-radius: 12px; border: 1px solid #ffdeeb; }
-        input { padding: 12px; border: 1px solid #ffc1d1; border-radius: 8px; outline: none; }
-        .btn { padding: 12px; border: none; border-radius: 10px; cursor: pointer; font-weight: bold; color: white; transition: 0.3s; }
-        .item-gestao { display: flex; flex-direction: column; padding: 12px; border-bottom: 1px dashed #ff85a1; margin-bottom: 10px; background: #fff; border-radius: 8px; }
-        .pedido-card { background: #fdfdfd; border: 1px solid #eee; padding: 15px; border-radius: 12px; margin-bottom: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
-        .status-badge { font-size: 0.7em; padding: 3px 8px; border-radius: 5px; color: white; font-weight: bold; }
+        body { margin: 0; font-family: 'Comic Sans MS', cursive, sans-serif; background: url('fundo.png') fixed center; background-size: cover; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
+        .glass-card { background: rgba(255, 255, 255, 0.96); backdrop-filter: blur(10px); border-radius: 25px; padding: 25px; width: 90%; max-width: 450px; box-shadow: 0 10px 40px rgba(0,0,0,0.2); border: 2px solid white; margin: 20px auto; }
+        h1, h3 { color: #d63384; text-align: center; margin-bottom: 15px; }
+        input, select { width: 100%; padding: 12px; margin: 8px 0; border-radius: 12px; border: 1.5px solid #ffc1d1; outline: none; box-sizing: border-box; font-family: inherit; }
+        .btn { width: 100%; padding: 14px; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; margin-top: 10px; transition: 0.3s; }
+        .btn-principal { background: var(--doce-rosa); color: white; box-shadow: 0 4px 0 #d63384; }
+        .btn-whatsapp { background: var(--doce-verde); color: white; font-size: 1.1em; margin-top: 20px; }
+        .produto { display: flex; align-items: center; gap: 15px; padding: 12px; border-bottom: 1px dashed var(--doce-rosa); }
+        .img-produto { width: 65px; height: 65px; border-radius: 12px; object-fit: cover; background: #fff0f5; border: 1px solid #ffdeeb; }
+        .info-produto { flex: 1; }
+        .btn-add { background: var(--doce-azul); border: none; border-radius: 8px; padding: 8px 15px; cursor: pointer; font-weight: bold; }
+        .item-carrinho { display: flex; justify-content: space-between; font-size: 0.95em; margin-bottom: 8px; border-left: 3px solid var(--doce-rosa); padding-left: 8px; }
+        .pedido-mini-card { background: #fff; padding: 12px; border-radius: 15px; margin-bottom: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        #modal-pix { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); z-index:9999; justify-content:center; align-items:center; padding: 20px; }
     </style>
 </head>
 <body>
 
-<div class="admin-card" id="area-admin" style="display:none;">
-    <h1 style="color:#d63384; text-align:center;">Gestão Tia do Doce 🧁</h1>
-    
-    <div class="form-group">
-        <h3>Cadastrar Novo Doce</h3>
-        <input type="text" id="novo-nome" placeholder="Nome (Ex: KIT KAT)">
-        <input type="number" id="novo-preco" step="0.01" placeholder="Preço (R$)">
-        <input type="number" id="novo-estoque" placeholder="Qtd Inicial">
-        <button class="btn" style="background:var(--doce-rosa);" id="btnSalvar">Adicionar ao Cardápio</button>
+    <div id="sessao-auth" class="glass-card">
+        <h1>Tia do Doce 🧁</h1>
+        <div style="display: flex; justify-content: space-around; margin-bottom: 20px; border-bottom: 2px solid #ffdeeb;">
+            <button id="tab-login" onclick="mudarAba('login')" style="flex:1; padding: 10px; border:none; background:none; cursor:pointer; font-weight:bold; color:#d63384; border-bottom: 2px solid #d63384;">Entrar</button>
+            <button id="tab-cadastro" onclick="mudarAba('cadastro')" style="flex:1; padding: 10px; border:none; background:none; cursor:pointer; color:#aaa;">Cadastrar</button>
+        </div>
+        <div id="form-login">
+            <input type="email" id="loginEmail" placeholder="Seu e-mail">
+            <input type="password" id="loginSenha" placeholder="Sua senha">
+            <button class="btn btn-principal" onclick="btnLogin()">Entrar no Cardápio</button>
+        </div>
+        <div id="form-cadastro" style="display:none;">
+            <input type="text" id="regNome" placeholder="Seu Apelido">
+            <input type="email" id="regEmail" placeholder="E-mail">
+            <input type="password" id="regSenha" placeholder="Senha">
+            <button class="btn btn-principal" onclick="btnCadastrar()">Criar Conta</button>
+        </div>
     </div>
 
-    <h3>📦 Estoque e Ativação</h3>
-    <div id="lista-estoque">Buscando estoque...</div>
+    <div id="sessao-cardapio" class="glass-card" style="display:none;">
+        <h1 id="boas-vindas">Cardápio ✨</h1>
+        <div id="lista-produtos">Carregando doces...</div>
+        
+        <div style="margin-top:25px; background: #fff; padding: 15px; border-radius: 15px; border: 1px solid #ffdeeb;">
+            <h3>🛒 Carrinho</h3>
+            <div id="carrinho-itens"></div>
+            <p style="text-align:right;"><strong>Total: R$ <span id="total-valor">0,00</span></strong></p>
+            <select id="forma-pagamento">
+                <option value="" disabled selected>Forma de Pagamento?</option>
+                <option value="Pix">Pix ⚡</option>
+                <option value="Dinheiro">Dinheiro</option>
+                <option value="Quinzena">Na Quinzena 🗓️</option>
+            </select>
+            <button class="btn btn-whatsapp" onclick="enviarPedido()">Finalizar Pedido 🚀</button>
+        </div>
 
-    <hr style="margin: 30px 0; border: 0; border-top: 1px solid #eee;">
-    
-    <h3>💰 Pedidos Pendentes</h3>
-    <div id="lista-pedidos">Buscando pedidos...</div>
+        <h3 style="margin-top:30px;">📋 Meus Pedidos</h3>
+        <div id="lista-meus-pedidos"></div>
 
-    <button onclick="logout()" style="width:100%; margin-top:20px; background:#f0f0f0; border:none; padding:12px; border-radius:10px; cursor:pointer; font-weight:bold; color:#666;">Sair do Painel</button>
-</div>
+        <div style="margin-top:20px; border-top: 1px solid #eee; padding-top: 10px;">
+            <button id="btn-admin-link" class="btn" style="display:none; background:#2d3436; color:white;" onclick="location.href='painel.html'">⚙️ Painel da Tia</button>
+            <button class="btn" onclick="logout()" style="background:none; color:#aaa; font-size:0.8em; text-decoration:underline;">Sair</button>
+        </div>
+    </div>
+
+    <div id="modal-pix">
+        <div class="glass-card" style="max-width:320px; text-align:center;">
+            <h3>Pagamento via Pix ⚡</h3>
+            <div id="qrcode-area" style="margin:15px 0;"></div>
+            <p>Total: <strong>R$ <span id="pix-valor-total">0,00</span></strong></p>
+            <button class="btn" style="background:#eee; font-size:0.8em;" onclick="copiarChave()">Copiar Chave (11984756872)</button>
+            <button class="btn btn-principal" onclick="fecharPix()">Já paguei / Continuar ✅</button>
+        </div>
+    </div>
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-    import { getFirestore, collection, addDoc, updateDoc, doc, onSnapshot, getDoc, query, where, orderBy } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut, updateProfile } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+    import { getFirestore, collection, getDocs, addDoc, query, where, updateDoc, doc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
     const firebaseConfig = {
         apiKey: "AIzaSyB6FUb-KoF6S4h-y70trrcElPb2AYuUogM",
@@ -59,100 +98,145 @@
     const db = getFirestore(app);
     const ADMINS = ["carlos.sabino@outlook.com.br", "lialmeyda@hotmail.com"];
 
-    onAuthStateChanged(auth, (u) => {
-        if (u && ADMINS.includes(u.email)) {
-            document.getElementById('area-admin').style.display = 'block';
-            iniciarEscutas();
-        } else { window.location.href = "index.html"; }
+    onAuthStateChanged(auth, (user) => {
+        if (user) {
+            document.getElementById('sessao-auth').style.display = 'none';
+            document.getElementById('sessao-cardapio').style.display = 'block';
+            document.getElementById('boas-vindas').innerText = ADMINS.includes(user.email) ? "Oi, Tia! 🧁" : "Oi, " + (user.displayName || "Cliente") + "! ✨";
+            if(ADMINS.includes(user.email)) document.getElementById('btn-admin-link').style.display = 'block';
+            carregarProdutos();
+            carregarMeusPedidos(user.email);
+        } else {
+            document.getElementById('sessao-auth').style.display = 'block';
+            document.getElementById('sessao-cardapio').style.display = 'none';
+        }
     });
 
-    window.logout = () => signOut(auth);
-
-    function iniciarEscutas() {
-        // 1. ESCUTA DE PRODUTOS (ESTOQUE)
-        onSnapshot(collection(db, "produtos"), (snap) => {
-            const cont = document.getElementById('lista-estoque');
-            cont.innerHTML = "";
-            snap.forEach(d => {
-                const item = d.data();
-                const ativo = item.ativo !== false;
-                cont.innerHTML += `
-                    <div class="item-gestao" style="opacity: ${ativo ? '1' : '0.5'}">
-                        <div style="display:flex; justify-content:space-between; align-items:center;">
-                            <strong>${item.nome}</strong>
-                            <button class="btn" style="background:${ativo?'var(--doce-laranja)':'var(--doce-verde)'}; padding:5px 10px; font-size:0.7em;" 
-                                onclick="toggleStatus('${d.id}', ${ativo})">${ativo?'Inativar':'Ativar'}</button>
-                        </div>
-                        <div style="font-size:0.9em; color:#666;">💰 R$ ${item.preco.toFixed(2)} | 📦 Estoque: ${item.estoque}</div>
-                    </div>`;
-            });
-        });
-
-        // 2. ESCUTA DE PEDIDOS (PENDENTES) - Aqui estava o erro!
-        // Filtramos para mostrar apenas o que não foi "Finalizado" ou "Cancelado"
-        const qPedidos = query(collection(db, "pedidos"), where("status", "==", "Pendente"), orderBy("data", "desc"));
+    async function carregarProdutos() {
+    // Filtra apenas produtos onde 'ativo' não é false
+    const q = query(collection(db, "produtos"), where("ativo", "!=", false));
+    const snap = await getDocs(q);
+    const lista = document.getElementById('lista-produtos');
+    lista.innerHTML = "";
+    
+    snap.forEach(d => {
+        const p = d.data();
+        const imgUrl = p.fotoUrl || 'https://cdn-icons-png.flaticon.com/512/2553/2553713.png';
         
-        onSnapshot(qPedidos, (snap) => {
-            const cont = document.getElementById('lista-pedidos');
-            cont.innerHTML = "";
-            
-            if(snap.empty) {
-                cont.innerHTML = "<p style='text-align:center; color:#999;'>Nenhum pedido pendente no momento. 🙌</p>";
-                return;
-            }
+        lista.innerHTML += `
+        <div class="produto">
+            <img src="${imgUrl}" class="img-produto" onerror="this.src='https://cdn-icons-png.flaticon.com/512/2553/2553713.png'">
+            <div class="info-produto">
+                <strong>${p.nome}</strong><br>
+                <span style="color:var(--doce-rosa); font-weight:bold;">R$ ${p.preco.toFixed(2)}</span>
+            </div>
+            <button class="btn-add" onclick="adicionar('${p.nome}', ${p.preco})" ${p.estoque <= 0 ? 'disabled' : ''}>
+                ${p.estoque <= 0 ? 'Fim' : '+'}
+            </button>
+        </div>`;
+    });
+}
 
-            snap.forEach(d => {
-                const p = d.data();
-                const dataFormatada = p.data ? new Date(p.data.seconds * 1000).toLocaleString('pt-BR') : 'Agora';
-                
+    function carregarMeusPedidos(email) {
+        const q = query(collection(db, "pedidos"), where("emailCliente", "==", email));
+        onSnapshot(q, (snap) => {
+            const cont = document.getElementById('lista-meus-pedidos');
+            cont.innerHTML = snap.empty ? '<p style="text-align:center; color:#aaa; font-size:0.8em;">Nenhum pedido realizado.</p>' : "";
+            snap.forEach((d) => {
+                const ped = d.data();
+                const isCancelado = ped.status === "Cancelado";
                 cont.innerHTML += `
-                    <div class="pedido-card">
-                        <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
-                            <strong>👤 ${p.cliente}</strong>
-                            <span class="status-badge" style="background:var(--doce-rosa)">PENDENTE</span>
-                        </div>
-                        <div style="font-size:0.9em; color:#555;">
-                            📝 ${p.itens.map(i => `${i.qtd}x ${i.nome}`).join(', ')}<br>
-                            📅 ${dataFormatada} | 💰 <strong>R$ ${p.total.toFixed(2)}</strong>
-                        </div>
-                        <div style="margin-top:12px; display:flex; gap:10px;">
-                            <button class="btn" style="background:var(--doce-verde); flex:1; font-size:0.8em;" onclick="atualizarStatus('${d.id}', 'Pago')">Marcar Pago</button>
-                            <button class="btn" style="background:var(--doce-cancel); flex:1; font-size:0.8em;" onclick="atualizarStatus('${d.id}', 'Cancelado')">Cancelar</button>
-                        </div>
-                    </div>`;
+                <div class="pedido-mini-card" style="border-left: 5px solid ${isCancelado ? '#ccc' : 'var(--doce-rosa)'}">
+                    <div style="display:flex; justify-content:space-between; font-size:0.8em;">
+                        <strong>#${ped.pedidoId}</strong>
+                        <b style="color:${isCancelado ? '#aaa' : '#d63384'}">${ped.status.toUpperCase()}</b>
+                    </div>
+                    <div style="font-size:0.85em; margin:5px 0;">Total: R$ ${ped.total.toFixed(2)}</div>
+                </div>`;
             });
         });
     }
 
-    // FUNÇÕES DE STATUS
-    window.toggleStatus = async (id, s) => { await updateDoc(doc(db, "produtos", id), { ativo: !s }); };
-    
-    window.atualizarStatus = async (id, novoStatus) => {
-        if(confirm(`Deseja marcar este pedido como ${novoStatus}?`)) {
-            await updateDoc(doc(db, "pedidos", id), { status: novoStatus });
+    window.btnLogin = () => {
+        const e = document.getElementById('loginEmail').value, s = document.getElementById('loginSenha').value;
+        signInWithEmailAndPassword(auth, e, s).catch(err => alert("Erro ao entrar"));
+    };
+
+    window.btnCadastrar = () => {
+        const n = document.getElementById('regNome').value, e = document.getElementById('regEmail').value, s = document.getElementById('regSenha').value;
+        createUserWithEmailAndPassword(auth, e, s).then(res => updateProfile(res.user, { displayName: n }));
+    };
+
+    window.logout = () => signOut(auth);
+    window.db = db; window.auth = auth; window.addDoc = addDoc; window.collection = collection; window.query = query; window.where = where; window.getDocs = getDocs; window.updateDoc = updateDoc; window.doc = doc;
+</script>
+
+<script>
+    let carrinho = {}; let total = 0;
+    window.adicionar = (n, p) => {
+        if(carrinho[n]) { carrinho[n].qtd++; } else { carrinho[n] = { preco: p, qtd: 1 }; }
+        total += p; renderizar();
+    }
+    window.remover = (n) => {
+        if (carrinho[n]) {
+            total -= carrinho[n].preco;
+            if (carrinho[n].qtd > 1) { carrinho[n].qtd--; } else { delete carrinho[n]; }
+            renderizar();
         }
+    }
+    function renderizar() {
+        const c = document.getElementById('carrinho-itens'), k = Object.keys(carrinho);
+        c.innerHTML = k.length === 0 ? '<p style="color:#ccc; font-size:0.9em;">Seu carrinho está vazio.</p>' : 
+            k.map(n => `<div class="item-carrinho"><span>${carrinho[n].qtd}x ${n}</span> <button onclick="remover('${n}')" style="background:none; border:none; color:red; cursor:pointer;">✖</button></div>`).join('');
+        document.getElementById('total-valor').innerText = total.toFixed(2);
+    }
+
+    window.enviarPedido = async () => {
+        const pg = document.getElementById('forma-pagamento').value;
+        if(!pg || total <= 0) return alert("Verifique o carrinho e a forma de pagamento!");
+        const pid = Math.random().toString(36).substring(2, 6).toUpperCase(), u = window.auth.currentUser;
+
+        try {
+            await window.addDoc(window.collection(window.db, "pedidos"), {
+                pedidoId: pid, cliente: u.displayName, emailCliente: u.email, total, status: "Pendente", pagamento: pg, data: new Date().toISOString(), itens: carrinho, entregue: false
+            });
+            for (const n in carrinho) {
+                const q = window.query(window.collection(window.db, "produtos"), window.where("nome", "==", n));
+                const s = await window.getDocs(q);
+                s.forEach(async (d) => { await window.updateDoc(window.doc(window.db, "produtos", d.id), { estoque: Math.max(0, d.data().estoque - carrinho[n].qtd) }); });
+            }
+
+            let m = `*NOVO PEDIDO DA TIA* 🧁✨\n--------------------------------\n🆔 *#${pid}*\n👤 *CLIENTE:* ${u.displayName}\n--------------------------------\n\n*ITENS:*\n`;
+            Object.keys(carrinho).forEach(n => m += `🔹 *${carrinho[n].qtd}x* ${n}\n`);
+            m += `\n💰 *TOTAL:* R$ ${total.toFixed(2)}\n💳 *PGTO:* ${pg}\n--------------------------------\n_Obrigada pela preferência!_ 😍`;
+            
+            if(pg === "Pix") {
+                document.getElementById('pix-valor-total').innerText = total.toFixed(2);
+                document.getElementById('qrcode-area').innerHTML = `<img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=11984756872" alt="QR Code Pix">`;
+                document.getElementById('modal-pix').style.display = 'flex';
+                window.msgZapTemp = m;
+            } else {
+                window.open(`https://wa.me/5511984756872?text=${encodeURIComponent(m)}`);
+                resetar();
+            }
+        } catch (e) { alert("Erro ao salvar pedido."); }
+    }
+
+    window.fecharPix = () => {
+        document.getElementById('modal-pix').style.display = 'none';
+        window.open(`https://wa.me/5511984756872?text=${encodeURIComponent(window.msgZapTemp)}`);
+        resetar();
     };
 
-    // FUNÇÃO DE SALVAR NOVO DOCE
-    document.getElementById('btnSalvar').onclick = async () => {
-        const n = document.getElementById('novo-nome').value.toUpperCase().trim();
-        const p = parseFloat(document.getElementById('novo-preco').value);
-        const e = parseInt(document.getElementById('novo-estoque').value);
-
-        if(!n || isNaN(p)) return alert("Preencha Nome e Preço!");
-
-        const refFoto = await getDoc(doc(db, "config_fotos", n));
-        const ext = refFoto.exists() ? refFoto.data().ext : ".webp";
-        const arquivo = n.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, '') + ext;
-
-        await addDoc(collection(db, "produtos"), { nome: n, preco: p, estoque: e || 0, fotoUrl: arquivo, ativo: true });
-        alert("Cadastrado com sucesso!");
-        document.getElementById('novo-nome').value = "";
-        document.getElementById('novo-preco').value = "";
-        document.getElementById('novo-estoque').value = "";
+    window.copiarChave = () => { navigator.clipboard.writeText("11984756872"); alert("Chave copiada!"); };
+    function resetar() { carrinho = {}; total = 0; renderizar(); document.getElementById('forma-pagamento').value = ""; }
+    window.mudarAba = (tipo) => {
+        const isL = tipo === 'login';
+        document.getElementById('form-login').style.display = isL ? 'block' : 'none';
+        document.getElementById('form-cadastro').style.display = isL ? 'none' : 'block';
+        document.getElementById('tab-login').style.borderBottom = isL ? '2px solid #d63384' : 'none';
+        document.getElementById('tab-cadastro').style.borderBottom = isL ? 'none' : '2px solid #d63384';
     };
-
-    window.db = db;
 </script>
 </body>
 </html>
