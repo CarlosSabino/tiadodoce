@@ -114,7 +114,6 @@
         }
     });
 
-    // FUNÇÃO RECUPERAR SENHA
     window.recuperarSenha = async () => {
         const e = prompt("Digite seu e-mail para receber o link de troca de senha:");
         if (!e) return;
@@ -154,13 +153,17 @@
             snap.forEach((d) => {
                 const ped = d.data();
                 const isCancelado = ped.status === "Cancelado";
+                // Lógica de itens restaurada para o cliente
+                let txtItensCli = ped.itens ? Object.keys(ped.itens).map(n => `${ped.itens[n].qtd}x ${n}`).join(', ') : '...';
+                
                 cont.innerHTML += `
                 <div class="pedido-mini-card" style="border-left: 5px solid ${isCancelado ? '#ccc' : 'var(--doce-rosa)'}">
                     <div style="display:flex; justify-content:space-between; font-size:0.8em;">
                         <strong>#${ped.pedidoId}</strong>
                         <b style="color:${isCancelado ? '#aaa' : '#d63384'}">${ped.status.toUpperCase()}</b>
                     </div>
-                    <div style="font-size:0.85em; margin:5px 0;">Total: R$ ${ped.total.toFixed(2)}</div>
+                    <div style="font-size:0.75em; color:#666; margin:5px 0;">📝 ${txtItensCli}</div>
+                    <div style="font-size:0.85em;">Total: R$ ${ped.total.toFixed(2)}</div>
                 </div>`;
             });
         });
