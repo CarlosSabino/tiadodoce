@@ -13,7 +13,9 @@
         .btn { padding: 12px; border: none; border-radius: 10px; cursor: pointer; font-weight: bold; color: white; transition: 0.3s; }
         .item-gestao { display: flex; flex-direction: column; padding: 12px; border-bottom: 1px dashed #ff85a1; margin-bottom: 10px; background: #fff; border-radius: 8px; }
         .pedido-card { background: #fdfdfd; border: 1px solid #eee; padding: 15px; border-radius: 12px; margin-bottom: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
-        .status-badge { font-size: 0.7em; padding: 3px 8px; border-radius: 5px; color: white; font-weight: bold; }
+        .msg-vazia { text-align: center; color: #999; padding: 20px; font-style: italic; }
+        .link-apoio { text-align: center; margin-top: 15px; }
+        .link-apoio a { color: var(--doce-rosa); font-size: 0.85em; text-decoration: none; font-weight: bold; }
     </style>
 </head>
 <body>
@@ -30,19 +32,23 @@
     </div>
 
     <h3>📦 Estoque e Ativação</h3>
-    <div id="lista-estoque">Buscando estoque...</div>
+    <div id="lista-estoque" class="msg-vazia">Buscando estoque...</div>
 
     <hr style="margin: 30px 0; border: 0; border-top: 1px solid #eee;">
     
     <h3>💰 Pedidos Pendentes</h3>
-    <div id="lista-pedidos">Buscando pedidos...</div>
+    <div id="lista-pedidos" class="msg-vazia">Buscando pedidos...</div>
+
+    <div class="link-apoio">
+        <a href="#" onclick="recuperarSenha()">Esqueci minha senha</a>
+    </div>
 
     <button onclick="logout()" style="width:100%; margin-top:20px; background:#f0f0f0; border:none; padding:12px; border-radius:10px; cursor:pointer; font-weight:bold; color:#666;">Sair do Painel</button>
 </div>
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+    import { getAuth, onAuthStateChanged, signOut, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
     import { getFirestore, collection, addDoc, updateDoc, doc, onSnapshot, getDoc, query, where, orderBy } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
     const firebaseConfig = {
@@ -68,10 +74,26 @@
 
     window.logout = () => signOut(auth);
 
+    // FUNÇÃO ESQUECI MINHA SENHA
+    window.recuperarSenha = async () => {
+        const email = prompt("Digite seu e-mail para receber o link de redefinição:");
+        if (!email) return;
+        try {
+            await sendPasswordResetEmail(auth, email);
+            alert("📧 Link de redefinição enviado! Verifique seu e-mail.");
+        } catch (e) {
+            alert("Erro: Verifique se o e-mail está correto.");
+        }
+    };
+
     function iniciarEscutas() {
-        // 1. ESCUTA DE PRODUTOS (ESTOQUE)
+        // 1. ESCUTA DE ESTOQUE COM TRATAMENTO DE LISTA VAZIA
         onSnapshot(collection(db, "produtos"), (snap) => {
             const cont = document.getElementById('lista-estoque');
+            if (snap.empty) {
+                cont.innerHTML = "<div class='msg-vazia'>Nenhum produto cadastrado.</div>";
+                return;
+            }
             cont.innerHTML = "";
             snap.forEach(d => {
                 const item = d.data();
@@ -88,57 +110,43 @@
             });
         });
 
-        // 2. ESCUTA DE PEDIDOS (PENDENTES) - Aqui estava o erro!
-        // Filtramos para mostrar apenas o que não foi "Finalizado" ou "Cancelado"
-        const qPedidos = query(collection(db, "pedidos"), where("status", "==", "Pendente"), orderBy("data", "desc"));
-        
+        // 2. ESCUTA DE PEDIDOS COM TRATAMENTO DE LISTA VAZIA
+        const qPedidos = query(collection(db, "pedidos"), where("status", "==", "Pendente"));
         onSnapshot(qPedidos, (snap) => {
             const cont = document.getElementById('lista-pedidos');
-            cont.innerHTML = "";
-            
-            if(snap.empty) {
-                cont.innerHTML = "<p style='text-align:center; color:#999;'>Nenhum pedido pendente no momento. 🙌</p>";
+            if (snap.empty) {
+                cont.innerHTML = "<div class='msg-vazia'>Não há nenhum pedido pendente. 🙌</div>";
                 return;
             }
-
+            cont.innerHTML = "";
             snap.forEach(d => {
                 const p = d.data();
-                const dataFormatada = p.data ? new Date(p.data.seconds * 1000).toLocaleString('pt-BR') : 'Agora';
-                
                 cont.innerHTML += `
                     <div class="pedido-card">
                         <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
                             <strong>👤 ${p.cliente}</strong>
-                            <span class="status-badge" style="background:var(--doce-rosa)">PENDENTE</span>
+                            <span style="font-size:0.8em; color:var(--doce-rosa); font-weight:bold;">PENDENTE</span>
                         </div>
                         <div style="font-size:0.9em; color:#555;">
                             📝 ${p.itens.map(i => `${i.qtd}x ${i.nome}`).join(', ')}<br>
-                            📅 ${dataFormatada} | 💰 <strong>R$ ${p.total.toFixed(2)}</strong>
+                            💰 <strong>Total: R$ ${p.total.toFixed(2)}</strong>
                         </div>
                         <div style="margin-top:12px; display:flex; gap:10px;">
-                            <button class="btn" style="background:var(--doce-verde); flex:1; font-size:0.8em;" onclick="atualizarStatus('${d.id}', 'Pago')">Marcar Pago</button>
-                            <button class="btn" style="background:var(--doce-cancel); flex:1; font-size:0.8em;" onclick="atualizarStatus('${d.id}', 'Cancelado')">Cancelar</button>
+                            <button class="btn" style="background:var(--doce-verde); flex:1; font-size:0.8em;" onclick="atualizarStatus('${d.id}', 'Pago')">Pago</button>
+                            <button class="btn" style="background:var(--doce-cancel); flex:1; font-size:0.8em;" onclick="atualizarStatus('${d.id}', 'Cancelado')">X</button>
                         </div>
                     </div>`;
             });
         });
     }
 
-    // FUNÇÕES DE STATUS
     window.toggleStatus = async (id, s) => { await updateDoc(doc(db, "produtos", id), { ativo: !s }); };
-    
-    window.atualizarStatus = async (id, novoStatus) => {
-        if(confirm(`Deseja marcar este pedido como ${novoStatus}?`)) {
-            await updateDoc(doc(db, "pedidos", id), { status: novoStatus });
-        }
-    };
+    window.atualizarStatus = async (id, s) => { await updateDoc(doc(db, "pedidos", id), { status: s }); };
 
-    // FUNÇÃO DE SALVAR NOVO DOCE
     document.getElementById('btnSalvar').onclick = async () => {
         const n = document.getElementById('novo-nome').value.toUpperCase().trim();
         const p = parseFloat(document.getElementById('novo-preco').value);
         const e = parseInt(document.getElementById('novo-estoque').value);
-
         if(!n || isNaN(p)) return alert("Preencha Nome e Preço!");
 
         const refFoto = await getDoc(doc(db, "config_fotos", n));
@@ -146,10 +154,7 @@
         const arquivo = n.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, '') + ext;
 
         await addDoc(collection(db, "produtos"), { nome: n, preco: p, estoque: e || 0, fotoUrl: arquivo, ativo: true });
-        alert("Cadastrado com sucesso!");
-        document.getElementById('novo-nome').value = "";
-        document.getElementById('novo-preco').value = "";
-        document.getElementById('novo-estoque').value = "";
+        alert("Cadastrado!");
     };
 
     window.db = db;
