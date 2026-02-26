@@ -31,7 +31,7 @@
         <button class="btn" style="background:var(--doce-rosa);" id="btnSalvar">Adicionar ao Cardápio</button>
     </div>
 
-    <h3>📦 Estoque e Preços (Editável)</h3>
+    <h3>📦 Estoque e Preços</h3>
     <div id="lista-estoque" class="msg-vazia">Carregando estoque...</div>
 
     <button onclick="gerarExtrato()" class="btn" style="background:var(--doce-laranja); width:100%; margin: 20px 0;">📊 Gerar Extrato de Devedores</button>
@@ -42,8 +42,7 @@
     <div id="lista-pedidos" class="msg-vazia">Carregando pedidos...</div>
 
     <hr style="margin: 30px 0; border: 0; border-top: 1px solid #eee;">
-
-    <h3>📜 Histórico de Pedidos (Últimos 10)</h3>
+    <h3>📜 Histórico Recente</h3>
     <div id="lista-historico" class="msg-vazia">Carregando histórico...</div>
 
     <button onclick="logout()" style="width:100%; margin-top:20px; background:#f0f0f0; border:none; padding:12px; border-radius:10px; cursor:pointer; font-weight:bold; color:#666;">Sair do Painel</button>
@@ -86,87 +85,76 @@
     window.logout = () => signOut(auth);
 
     function iniciarEscutas() {
-        // 1. ESTOQUE
+        // PRODUTOS
         onSnapshot(collection(db, "produtos"), (snap) => {
             const cont = document.getElementById('lista-estoque');
-            if (snap.empty) { cont.innerHTML = "<p class='msg-vazia'>Nenhum produto cadastrado.</p>"; return; }
             cont.innerHTML = "";
             snap.forEach(d => {
                 const item = d.data();
                 const ativo = item.ativo !== false;
                 cont.innerHTML += `
                     <div class="item-gestao" style="opacity: ${ativo ? '1' : '0.5'}">
-                        <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <div style="display:flex; justify-content:space-between;">
                             <strong>${item.nome}</strong>
-                            <button class="btn" style="background:${ativo?'var(--doce-laranja)':'var(--doce-verde)'}; padding:5px 10px; font-size:0.7em;" 
-                                onclick="toggleStatus('${d.id}', ${ativo})">${ativo?'Inativar':'Ativar'}</button>
+                            <button class="btn" style="background:${ativo?'var(--doce-laranja)':'var(--doce-verde)'}; padding:5px; font-size:0.7em;" onclick="toggleStatus('${d.id}', ${ativo})">${ativo?'Inativar':'Ativar'}</button>
                         </div>
-                        <div style="font-size:0.85em; color:#666; margin-top:8px; display:flex; gap:10px; align-items:center;">
-                            <span>💰 R$ <input type="number" step="0.01" class="edit-field" value="${(item.preco || 0).toFixed(2)}" onchange="atualizarCampo('${d.id}', 'preco', this.value)"></span>
-                            <span>📦 Qtd: <input type="number" class="edit-field" value="${item.estoque || 0}" onchange="atualizarCampo('${d.id}', 'estoque', this.value)"></span>
+                        <div style="font-size:0.8em; margin-top:5px;">
+                            💰 R$ <input type="number" step="0.01" class="edit-field" value="${(item.preco || 0).toFixed(2)}" onchange="atualizarCampo('${d.id}', 'preco', this.value)">
+                            📦 Qtd: <input type="number" class="edit-field" value="${item.estoque || 0}" onchange="atualizarCampo('${d.id}', 'estoque', this.value)">
                         </div>
                     </div>`;
             });
         });
 
-        // 2. PEDIDOS PENDENTES
-        const qPendentes = query(collection(db, "pedidos"), where("status", "==", "Pendente"));
-        onSnapshot(qPendentes, (snap) => {
+        // PENDENTES
+        onSnapshot(query(collection(db, "pedidos"), where("status", "==", "Pendente")), (snap) => {
             const cont = document.getElementById('lista-pedidos');
-            if (snap.empty) { cont.innerHTML = "<p class='msg-vazia'>Não há pedidos pendentes. 🙌</p>"; return; }
-            cont.innerHTML = "";
+            cont.innerHTML = snap.empty ? "<p class='msg-vazia'>Tudo em dia! 🙌</p>" : "";
             snap.forEach(d => {
                 const p = d.data();
-                let txtItens = p.itens ? Object.keys(p.itens).map(n => `${p.itens[n].qtd}x ${n}`).join(', ') : '...';
+                const itens = p.itens ? Object.keys(p.itens).map(n => `${p.itens[n].qtd}x ${n}`).join(', ') : '...';
                 cont.innerHTML += `
                     <div class="pedido-card">
-                        <div style="display:flex; justify-content:space-between;">
-                            <strong>👤 ${p.cliente || 'Anônimo'}</strong>
-                            <span style="font-size:0.7em; color:var(--doce-rosa); font-weight:bold;">${p.entregue ? '✅ ENTREGUE' : '⏳ PENDENTE'}</span>
+                        <div style="display:flex; justify-content:space-between; font-size:0.9em;">
+                            <strong>👤 ${p.cliente}</strong>
+                            <span style="color:var(--doce-rosa); font-weight:bold;">${p.entregue ? '✅ ENTREGUE' : '⏳ PENDENTE'}</span>
                         </div>
-                        <div style="font-size:0.85em; color:#555; margin:8px 0;">📝 ${txtItens} | 💰 <strong>R$ ${(p.total || 0).toFixed(2)}</strong></div>
-                        <div style="display:flex; gap:5px; flex-wrap:wrap;">
-                            <button class="btn" style="background:var(--doce-azul); flex:1; font-size:0.75em;" onclick="atualizarPedido('${d.id}', {entregue: true})">Entregue ✅</button>
-                            <button class="btn" style="background:var(--doce-verde); flex:1; font-size:0.75em;" onclick="atualizarPedido('${d.id}', {status: 'Pago'})">Pago 💰</button>
-                            <button class="btn" style="background:var(--doce-cancel); padding:10px; font-size:0.75em;" onclick="atualizarPedido('${d.id}', {status: 'Cancelado'})">X</button>
+                        <p style="font-size:0.8em; color:#666; margin:5px 0;">📝 ${itens}<br>💰 R$ ${p.total.toFixed(2)} (${p.pagamento})</p>
+                        <div style="display:flex; gap:5px;">
+                            <button class="btn" style="background:var(--doce-azul); flex:1; font-size:0.7em;" onclick="atualizarPedido('${d.id}', {entregue: true})">Entregar ✅</button>
+                            <button class="btn" style="background:var(--doce-verde); flex:1; font-size:0.7em;" onclick="atualizarPedido('${d.id}', {status: 'Pago'})">Pago 💰</button>
+                            <button class="btn" style="background:var(--doce-cancel); flex:1; font-size:0.7em;" onclick="atualizarPedido('${d.id}', {status: 'Cancelado'})">Cancelar</button>
                         </div>
                     </div>`;
             });
         });
 
-        // 3. HISTÓRICO COM ITENS
-        const qHistorico = query(collection(db, "pedidos"), where("status", "!=", "Pendente"), limit(10));
-        onSnapshot(qHistorico, (snap) => {
+        // HISTÓRICO
+        onSnapshot(query(collection(db, "pedidos"), where("status", "!=", "Pendente"), limit(10)), (snap) => {
             const cont = document.getElementById('lista-historico');
-            if (snap.empty) { cont.innerHTML = "<p class='msg-vazia'>Nenhum pedido no histórico ainda. 🍪</p>"; return; }
-            cont.innerHTML = "";
+            cont.innerHTML = snap.empty ? "<p class='msg-vazia'>Sem registros.</p>" : "";
             snap.forEach(d => {
                 const p = d.data();
-                const corStatus = p.status === "Pago" ? "var(--doce-verde)" : "var(--doce-cancel)";
-                // Monta os itens para o histórico também
-                let txtItensHist = p.itens ? Object.keys(p.itens).map(n => `${p.itens[n].qtd}x ${n}`).join(', ') : '...';
-                
+                const cor = p.status === "Pago" ? "var(--doce-verde)" : "var(--doce-cancel)";
                 cont.innerHTML += `
-                    <div class="pedido-card" style="opacity: 0.8; border-left: 5px solid ${corStatus}">
-                        <div style="display:flex; justify-content:space-between; font-size:0.85em;">
-                            <span>👤 ${p.cliente}</span>
-                            <strong style="color:${corStatus}">${p.status.toUpperCase()}</strong>
+                    <div class="pedido-card" style="opacity: 0.7; border-left: 5px solid ${cor}">
+                        <div style="display:flex; justify-content:space-between; font-size:0.8em;">
+                            <span>${p.cliente}</span> <strong>${p.status.toUpperCase()}</strong>
                         </div>
-                        <div style="font-size:0.75em; color:#666; margin:5px 0;">📝 ${txtItensHist}</div>
-                        <div style="font-size:0.8em; color:#777;">💰 R$ ${(p.total || 0).toFixed(2)} | Pgto: ${p.pagamento || '-'}</div>
                     </div>`;
             });
         });
     }
 
-    // FUNÇÕES AUXILIARES
     window.atualizarCampo = async (id, campo, valor) => {
         const v = parseFloat(valor);
-        if (!isNaN(v)) { const obj = {}; obj[campo] = v; await updateDoc(doc(db, "produtos", id), obj); }
+        if (!isNaN(v)) await updateDoc(doc(db, "produtos", id), { [campo]: v });
     };
-    window.toggleStatus = async (id, s) => { await updateDoc(doc(db, "produtos", id), { ativo: !s }); };
+
+    window.toggleStatus = async (id, s) => await updateDoc(doc(db, "produtos", id), { ativo: !s });
+    
     window.atualizarPedido = async (id, dados) => {
-        if(confirm("Confirmar alteração?")) { await updateDoc(doc(db, "pedidos", id), dados); }
+        if(confirm("Confirmar alteração?")) await updateDoc(doc(db, "pedidos", id), dados);
     };
 
     window.gerarExtrato = async () => {
@@ -174,16 +162,11 @@
         const devedores = {};
         snap.forEach(d => {
             const p = d.data();
-            if(!devedores[p.cliente]) devedores[p.cliente] = 0;
-            devedores[p.cliente] += p.total;
+            devedores[p.cliente] = (devedores[p.cliente] || 0) + p.total;
         });
         let html = "";
-        for (let nome in devedores) {
-            html += `<div style="display:flex; justify-content:space-between; padding:10px; border-bottom:1px solid #eee;">
-                        <span>${nome}</span> <strong>R$ ${devedores[nome].toFixed(2)}</strong>
-                     </div>`;
-        }
-        document.getElementById('conteudo-extrato').innerHTML = html || "Nenhuma pendência encontrada.";
+        for (let n in devedores) html += `<div style="display:flex; justify-content:space-between; padding:8px; border-bottom:1px solid #eee;"><span>${n}</span> <strong>R$ ${devedores[n].toFixed(2)}</strong></div>`;
+        document.getElementById('conteudo-extrato').innerHTML = html || "Ninguém devendo!";
         document.getElementById('modal-extrato').style.display = 'flex';
     };
 
@@ -191,12 +174,11 @@
         const n = document.getElementById('novo-nome').value.toUpperCase().trim();
         const p = parseFloat(document.getElementById('novo-preco').value);
         const e = parseInt(document.getElementById('novo-estoque').value);
-        if(!n || isNaN(p)) return alert("Preencha Nome e Preço!");
-        const refFoto = await getDoc(doc(db, "config_fotos", n));
-        const ext = refFoto.exists() ? refFoto.data().ext : ".webp";
-        const arquivo = n.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, '') + ext;
+        if(!n || isNaN(p)) return alert("Erro nos campos!");
+        const ref = await getDoc(doc(db, "config_fotos", n));
+        const arquivo = n.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, '') + (ref.exists() ? ref.data().ext : ".webp");
         await addDoc(collection(db, "produtos"), { nome: n, preco: p, estoque: e || 0, fotoUrl: arquivo, ativo: true });
-        alert("Cadastrado!");
+        alert("Salvo!");
     };
     window.db = db;
 </script>
