@@ -1,0 +1,16 @@
+{
+  "name": "Tia do Doce",
+  "short_name": "TiaDoce",
+  "start_url": "index.html",
+  "display": "standalone",
+  "background_color": "#fff5f8",
+  "theme_color": "#ff85a1",
+  "icons": [
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/2553/2553713.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
