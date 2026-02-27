@@ -1,7 +1,7 @@
 {
   "name": "Tia do Doce",
   "short_name": "Tia do Doce",
-  "description": "Cardápio e Gestão de Doces",
+  "description": "Cardápio e Gestão de Doces da Tia",
   "start_url": "/index.html",
   "display": "standalone",
   "orientation": "portrait",
