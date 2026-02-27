@@ -9,13 +9,13 @@
   "theme_color": "#ff85a1",
   "icons": [
     {
-      "src": "tiadodoce.png",
+      "src": "tiadodoce.jpg",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any maskable"
     },
     {
-      "src": "tiadodoce.png",
+      "src": "tiadodoce.jpg",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
