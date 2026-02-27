@@ -41,6 +41,18 @@
         }
 
         .link-recuperar { text-align: center; margin-top: 15px; display: block; color: var(--doce-rosa); font-size: 0.85em; text-decoration: none; font-weight: bold; cursor: pointer; }
+        
+        <link rel="manifest" href="manifest.json">
+        <meta name="theme-color" content="#ff85a1">
+        
+        <script>
+          if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('sw.js')
+              .then(() => console.log("PWA Registrado!"))
+              .catch(err => console.log("Erro no PWA:", err));
+          }
+        </script>
+        
     </style>
 </head>
 <body>
