@@ -1,9 +1,9 @@
-const CACHE_NAME = 'tia-doce-v3';
+const CACHE_NAME = 'tia-doce-v4';
 const assets = [
   '/',
   '/index.html',
   '/painel.html',
-  '/tiadodoce.png',
+  '/tiadodoce.jpg',
   '/fundo.png'
 ];
 
