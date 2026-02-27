@@ -4,6 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tia do Doce - Cardápio</title>
+    
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#ff85a1">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+
     <style>
         :root { --doce-rosa: #ff85a1; --doce-azul: #a2d2ff; --doce-verde: #25d366; --doce-laranja: #e67e22; --doce-cancel: #ff7675; }
         body { margin: 0; font-family: 'Comic Sans MS', cursive, sans-serif; background: url('fundo.png') fixed center; background-size: cover; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
@@ -19,43 +25,20 @@
         .btn-add { background: var(--doce-azul); border: none; border-radius: 8px; padding: 8px 15px; cursor: pointer; font-weight: bold; }
         .item-carrinho { display: flex; justify-content: space-between; font-size: 0.95em; margin-bottom: 8px; border-left: 3px solid var(--doce-rosa); padding-left: 8px; }
         .pedido-mini-card { background: #fff; padding: 12px; border-radius: 15px; margin-bottom: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
-        
-        /* AJUSTE NO MODAL PIX PARA ALINHAMENTO PERFEITO */
-        #modal-pix { 
-            display:none; 
-            position:fixed; 
-            top:0; left:0; 
-            width:100%; height:100%; 
-            background:rgba(0,0,0,0.8); 
-            z-index:9999; 
-            justify-content:center; 
-            align-items:center; 
-        }
-        .pix-container { 
-            text-align: center; 
-            max-width: 350px; 
-            width: 85%;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-
+        #modal-pix { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:9999; justify-content:center; align-items:center; }
+        .pix-container { text-align: center; max-width: 350px; width: 85%; display: flex; flex-direction: column; align-items: center; }
         .link-recuperar { text-align: center; margin-top: 15px; display: block; color: var(--doce-rosa); font-size: 0.85em; text-decoration: none; font-weight: bold; cursor: pointer; }
-        
-        <link rel="manifest" href="manifest.json">
-        <meta name="theme-color" content="#ff85a1">
-        <meta name="mobile-web-app-capable" content="yes">
-        <meta name="apple-mobile-web-app-capable" content="yes">
-        
-        <script>
-          if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('sw.js')
-              .then(() => console.log("PWA Registrado!"))
-              .catch(err => console.log("Erro no PWA:", err));
-          }
-        </script>
-        
     </style>
+
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js')
+                    .then(() => console.log("PWA Ativo!"))
+                    .catch(err => console.log("Erro PWA:", err));
+            });
+        }
+    </script>
 </head>
 <body>
 
@@ -153,8 +136,8 @@
         if (!e) return;
         try {
             await sendPasswordResetEmail(auth, e);
-            alert("📧 E-mail de redefinição enviado! Verifique sua caixa de entrada.");
-        } catch (err) { alert("Erro ao enviar: verifique se o e-mail está correto."); }
+            alert("📧 E-mail enviado! Cheque seu spam se não encontrar.");
+        } catch (err) { alert("Erro ao enviar e-mail."); }
     };
 
     async function carregarProdutos() {
@@ -164,10 +147,9 @@
         lista.innerHTML = "";
         snap.forEach(d => {
             const p = d.data();
-            const imgUrl = p.fotoUrl || 'balassortidas.webp';
             lista.innerHTML += `
             <div class="produto">
-                <img src="${imgUrl}" class="img-produto" onerror="this.src='balassortidas.webp'">
+                <img src="${p.fotoUrl || 'balassortidas.webp'}" class="img-produto" onerror="this.src='balassortidas.webp'">
                 <div class="info-produto">
                     <strong>${p.nome}</strong><br>
                     <span style="color:var(--doce-rosa); font-weight:bold;">R$ ${p.preco.toFixed(2)}</span>
@@ -180,48 +162,41 @@
     }
 
     function carregarMeusPedidos(email) {
-    const q = query(collection(db, "pedidos"), where("emailCliente", "==", email));
-    onSnapshot(q, (snap) => {
-        const cont = document.getElementById('lista-meus-pedidos');
-        cont.innerHTML = snap.empty ? '<p style="text-align:center; color:#aaa; font-size:0.8em;">Nenhum pedido realizado.</p>' : "";
-        snap.forEach((d) => {
-            const ped = d.data();
-            const isCancelado = ped.status === "Cancelado";
-            const isPago = ped.status === "Pago";
-            
-            // Definição de Cores Padronizada
-            let corStatus = 'var(--doce-rosa)'; // Padrão Pendente
-            if (isCancelado) corStatus = 'var(--doce-cancel)';
-            if (ped.entregue) corStatus = 'var(--doce-azul)';
-            if (isPago) corStatus = 'var(--doce-verde)';
+        const q = query(collection(db, "pedidos"), where("emailCliente", "==", email));
+        onSnapshot(q, (snap) => {
+            const cont = document.getElementById('lista-meus-pedidos');
+            cont.innerHTML = snap.empty ? '<p style="text-align:center; color:#aaa; font-size:0.8em;">Nenhum pedido realizado.</p>' : "";
+            snap.forEach((d) => {
+                const ped = d.data();
+                const isCancelado = ped.status === "Cancelado";
+                const isPago = ped.status === "Pago";
+                
+                let corStatus = 'var(--doce-rosa)';
+                if (isCancelado) corStatus = 'var(--doce-cancel)';
+                if (ped.entregue) corStatus = 'var(--doce-azul)';
+                if (isPago) corStatus = 'var(--doce-verde)';
 
-            const labelStatus = ped.entregue && !isPago ? "ENTREGUE (Pgto Pendente)" : ped.status.toUpperCase();
-            
-            // Itens com quebra de linha e marcador
-            let htmlItens = ped.itens ? Object.keys(ped.itens).map(n => 
-                `<div style="margin-left:10px;">• ${ped.itens[n].qtd}x ${n}</div>`
-            ).join('') : '...';
-            
-            cont.innerHTML += `
-            <div class="pedido-mini-card" style="border-left: 6px solid ${corStatus}; text-align:left;">
-                <div style="display:flex; justify-content:space-between; font-size:0.8em; margin-bottom:5px;">
-                    <strong>#${ped.pedidoId}</strong>
-                    <b style="color:${corStatus}">${labelStatus}</b>
-                </div>
-                <div style="font-size:0.8em; color:#555; line-height:1.4;">
-                    ${htmlItens}
-                </div>
-                <div style="font-size:0.85em; margin-top:8px; font-weight:bold; border-top:1px solid #f0f0f0; pt-5px;">
-                    Total: R$ ${ped.total.toFixed(2)}
-                </div>
-            </div>`;
+                const labelStatus = ped.entregue && !isPago ? "ENTREGUE ✅" : ped.status.toUpperCase();
+                let htmlItens = ped.itens ? Object.keys(ped.itens).map(n => `<div style="margin-left:10px;">• ${ped.itens[n].qtd}x ${n}</div>`).join('') : '...';
+                
+                cont.innerHTML += `
+                <div class="pedido-mini-card" style="border-left: 6px solid ${corStatus}; text-align:left;">
+                    <div style="display:flex; justify-content:space-between; font-size:0.8em; margin-bottom:5px;">
+                        <strong>#${ped.pedidoId}</strong>
+                        <b style="color:${corStatus}">${labelStatus}</b>
+                    </div>
+                    <div style="font-size:0.8em; color:#555; line-height:1.4;">${htmlItens}</div>
+                    <div style="font-size:0.85em; margin-top:8px; font-weight:bold; border-top:1px solid #f0f0f0; padding-top:5px;">
+                        Total: R$ ${ped.total.toFixed(2)}
+                    </div>
+                </div>`;
+            });
         });
-    });
-}
+    }
 
     window.btnLogin = () => {
         const e = document.getElementById('loginEmail').value, s = document.getElementById('loginSenha').value;
-        signInWithEmailAndPassword(auth, e, s).catch(err => alert("E-mail ou senha incorretos."));
+        signInWithEmailAndPassword(auth, e, s).catch(() => alert("E-mail ou senha incorretos."));
     };
 
     window.btnCadastrar = () => {
@@ -255,33 +230,27 @@
 
     window.enviarPedido = async () => {
         const pg = document.getElementById('forma-pagamento').value;
-        if(!pg || total <= 0) return alert("Verifique o carrinho e a forma de pagamento!");
+        if(!pg || total <= 0) return alert("Verifique o carrinho!");
         const pid = Math.random().toString(36).substring(2, 6).toUpperCase(), u = window.auth.currentUser;
 
         try {
             await window.addDoc(window.collection(window.db, "pedidos"), {
                 pedidoId: pid, cliente: u.displayName, emailCliente: u.email, total, status: "Pendente", pagamento: pg, data: new Date().toISOString(), itens: carrinho, entregue: false
             });
-            for (const n in carrinho) {
-                const q = window.query(window.collection(window.db, "produtos"), window.where("nome", "==", n));
-                const s = await window.getDocs(q);
-                s.forEach(async (d) => { await window.updateDoc(window.doc(window.db, "produtos", d.id), { estoque: Math.max(0, d.data().estoque - carrinho[n].qtd) }); });
-            }
-
-            let m = `*NOVO PEDIDO DA TIA* 🧁✨\n--------------------------------\n🆔 *#${pid}*\n👤 *CLIENTE:* ${u.displayName}\n--------------------------------\n\n*ITENS:*\n`;
-            Object.keys(carrinho).forEach(n => m += `🔹 *${carrinho[n].qtd}x* ${n}\n`);
-            m += `\n💰 *TOTAL:* R$ ${total.toFixed(2)}\n💳 *PGTO:* ${pg}\n--------------------------------\n_Obrigada pela preferência!_ 😍`;
+            let m = `*NOVO PEDIDO DA TIA* 🧁\nID: #${pid}\nCliente: ${u.displayName}\n\n`;
+            Object.keys(carrinho).forEach(n => m += `• ${carrinho[n].qtd}x ${n}\n`);
+            m += `\nTotal: R$ ${total.toFixed(2)}\nPGTO: ${pg}`;
             
             if(pg === "Pix") {
                 document.getElementById('pix-valor-total').innerText = total.toFixed(2);
-                document.getElementById('qrcode-area').innerHTML = `<img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=11984756872" style="display:block; margin:auto;" alt="QR Code Pix">`;
+                document.getElementById('qrcode-area').innerHTML = `<img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=11984756872" style="display:block; margin:auto;">`;
                 document.getElementById('modal-pix').style.display = 'flex';
                 window.msgZapTemp = m;
             } else {
                 window.open(`https://wa.me/5511984756872?text=${encodeURIComponent(m)}`);
                 resetar();
             }
-        } catch (e) { alert("Erro ao salvar pedido."); }
+        } catch (e) { alert("Erro ao salvar."); }
     }
 
     window.fecharPix = () => {
@@ -290,7 +259,7 @@
         resetar();
     };
 
-    window.copiarChave = () => { navigator.clipboard.writeText("11984756872"); alert("Chave copiada!"); };
+    window.copiarChave = () => { navigator.clipboard.writeText("11984756872"); alert("Copiado!"); };
     function resetar() { carrinho = {}; total = 0; renderizar(); document.getElementById('forma-pagamento').value = ""; }
     window.mudarAba = (tipo) => {
         const isL = tipo === 'login';
